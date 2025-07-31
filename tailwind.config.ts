@@ -1,3 +1,5 @@
+// Dosya Yolu: tailwind.config.ts
+
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -8,29 +10,22 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // --- "Sofistike & Cesur" Paleti ---
       colors: {
-        'brand-red': '#C0392B',
-        'brand-yellow': '#F1C40F',
-        'brand-cream': '#FDF6E3',
-        'brand-dark': '#2C3E50',
+        'brand-background': '#F9F9F9',  // Ferahlık için Çok Açık Gri Zemin
+        'brand-surface': '#FFFFFF',     // Kartlar için Saf Beyaz Yüzey
+        'brand-dark': '#333333',        // Koyu Antrasit (Ana Metin)
+        'brand-muted': '#6B7280',       // Soluk Gri (Yardımcı Metin)
+        'brand-red': '#B91C1C',         // Modern, Derin ve Sofistike Kırmızı (Vurgu)
+        'brand-border': '#E5E7EB',      // İnce Çizgiler ve Sınırlar
       },
       fontFamily: {
-        poppins: ['var(--font-poppins)'],
-        lato: ['var(--font-lato)'],
+        // layout.tsx'te tanımlanan CSS değişkenleri
+        sans: ['var(--font-poppins)', 'sans-serif'],
+        serif: ['var(--font-playfair)', 'serif'],
       },
-      animation: {
-        'fade-in-down': 'fadeInDown 0.5s ease-out',
-        'fade-in-up': 'fadeInUp 0.5s ease-out 0.3s',
-      },
-      keyframes: {
-        fadeInDown: {
-          '0%': { opacity: '0', transform: 'translateY(-20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        fadeInUp: {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
+      transitionTimingFunction: {
+        'custom-ease': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
       },
     },
   },
