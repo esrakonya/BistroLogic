@@ -27,6 +27,22 @@ const config: Config = {
       transitionTimingFunction: {
         'custom-ease': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
       },
+      keyframes: {
+        // Fırının "nefes alması" için
+        'furnace-pulse': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.9' },
+          '50%': { transform: 'scale(1.03)', opacity: '1' },
+        },
+        // Malzemelerin hafifçe süzülmesi için
+        'float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-15px)' },
+        }
+      },
+      animation: {
+        'furnace-pulse': 'furnace-pulse 8s ease-in-out infinite',
+        'float': 'float 6s ease-in-out infinite',
+      }
     },
   },
   plugins: [

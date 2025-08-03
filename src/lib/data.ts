@@ -4,32 +4,32 @@ import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { cache } from 'react';
 
-// site_content tablosundaki bir satırın tipini tanımlıyoruz.
+// YENİ: `export` kelimesi eklendi.
+// Artık bu tip, projenin başka yerlerinden import edilebilir.
 export interface SiteContent {
   id: number;
-  key: string;
-  value: string;
-  description: string;
+  created_at: string;
+  site_title: string | null;
+  footer_about: string | null;
+  footer_contact_address: string | null;
+  footer_contact_phone: string | null;
+  footer_contact_email: string | null;
+  // Diğer tüm alanları buraya eklediğinden emin ol...
 }
 
-// React'in 'cache' fonksiyonu, aynı render döngüsü içinde bu fonksiyonun
-// birden çok kez çağrılması durumunda veritabanına sadece bir kez gitmesini sağlar.
-// Bu bir performans optimizasyonudur.
+// site_content tablosundan tüm veriyi çeken ve önbellekleyen fonksiyon.
+// 'cache' kullanımı, aynı render işlemi içinde bu fonksiyon kaç kez çağrılırsa çağrılsın
+// veritabanına sadece bir kez gidilmesini sağlar.
 export const getSiteContent = cache(async (): Promise<SiteContent[]> => {
-  const cookieStore = cookies();
-  // Sunucu tarafında, anonim de olsa bir istemci oluşturuyoruz.
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
-  
-  try {
-    // site_content tablosu için "herkese açık okuma" politikası yazmamız gerekecek.
-    const { data, error } = await supabase.from('site_content').select('*');
-    if (error) {
-      console.error("Site content fetch error:", error);
-      throw error;
-    }
-    return data || [];
-  } catch (error) {
-    console.error("Failed to fetch site content:", error);
-    return [];
+  const supabase = createServerComponentClient({ cookies });
+  const { data, error } = await supabase
+    .from('site_content')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching site content:', error.message);
+    return []; // Hata durumunda boş dizi döndür.
   }
+
+  return data || []; // Veri null ise boş dizi döndür.
 });

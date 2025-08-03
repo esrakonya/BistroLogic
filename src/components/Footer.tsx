@@ -1,70 +1,63 @@
-// Dosya Yolu: src/components/Footer.tsx
-
 import Link from 'next/link';
-import { getSiteContent } from '@/lib/data'; // Yeni veri çekme fonksiyonumuzu import ediyoruz.
+// YENİ: Merkezi tip tanımını `data.ts` dosyasından import ediyoruz.
+// `import type` kullanımı, bunun sadece bir tip olduğunu ve derleme sırasında
+// JavaScript kodundan tamamen kaldırılabileceğini belirtir. Bu en iyi pratiktir.
+import type { SiteContent } from '@/lib/data';
 
-// Bileşeni 'async' olarak işaretliyoruz.
-export default async function Footer() {
-  const currentYear = new Date().getFullYear();
-  
-  // Sunucu tarafında, bileşen render edilmeden önce veriyi çekiyoruz.
-  const allContent = await getSiteContent();
+// ARTIK BU YEREL TANIMA İHTİYAÇ YOK. SİLİNMELİ.
+/*
+interface SiteContent {
+  site_title?: string;
+  footer_about?: string;
+  footer_contact_address?: string;
+  footer_contact_phone?: string;
+  footer_contact_email?: string;
+}
+*/
 
-  // Veriyi, anahtarlarıyla kolayca erişebileceğimiz bir objeye dönüştürelim.
-  const content = allContent.reduce((acc, item) => {
-    acc[item.key] = item.value;
-    return acc;
-  }, {} as Record<string, string>);
-  
+interface FooterProps {
+  // Artık Footer, projenin her yerinde aynı olan `SiteContent` tipini bekliyor.
+  content: SiteContent | null;
+}
+
+export default function Footer({ content }: FooterProps) {
+  const siteTitle = content?.site_title || "Pide Efsanesi";
+  const aboutText = content?.footer_about || "Lezzetin ve geleneğin buluşma noktası.";
+  const address = content?.footer_contact_address || "Adres bilgisi yakında eklenecektir.";
+  const phone = content?.footer_contact_phone || "";
+  const email = content?.footer_contact_email || "";
+
   return (
-    <footer className="bg-brand-dark text-white">
-      <div className="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
+    <footer className="bg-brand-dark text-white font-sans">
+      {/* Footer'ın geri kalan içeriği aynı... */}
+      <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
-          
-          {/* Bölüm 1: Logo ve Açıklama */}
           <div>
-            <h3 className="text-white font-poppins font-bold text-xl tracking-wider">
-              EFSANE<span className="text-brand-yellow">PİDE</span>
-            </h3>
-            <p className="mt-4 text-gray-400 text-sm">
-              Geleneksel tatları modern sunumla birleştiriyoruz. Şehrin en iyi pidecisi.
-            </p>
+            <h3 className="text-2xl font-serif italic font-bold mb-4">{siteTitle}</h3>
+            <p className="text-brand-muted max-w-xs mx-auto md:mx-0">{aboutText}</p>
           </div>
-
-          {/* Bölüm 2: Hızlı Linkler */}
           <div>
-            <h4 className="font-poppins font-semibold tracking-wider uppercase">Hızlı Menü</h4>
-            <div className="mt-4 flex flex-col space-y-2">
-              <Link href="/" className="text-gray-300 hover:text-brand-yellow transition-colors duration-300">Ana Sayfa</Link>
-              <Link href="/menu" className="text-gray-300 hover:text-brand-yellow transition-colors duration-300">Menü</Link>
-              <Link href="/about" className="text-gray-300 hover:text-brand-yellow transition-colors duration-300">Hakkımızda</Link>
-              <Link href="/contact" className="text-gray-300 hover:text-brand-yellow transition-colors duration-300">İletişim</Link>
-            </div>
+            <h4 className="text-lg font-semibold tracking-wider uppercase mb-4">Menü</h4>
+            <ul className="space-y-2">
+              <li><Link href="/" className="hover:text-brand-red transition-colors">Ana Sayfa</Link></li>
+              <li><Link href="/menu" className="hover:text-brand-red transition-colors">Lezzet Menümüz</Link></li>
+              <li><Link href="/hakkimizda" className="hover:text-brand-red transition-colors">Hakkımızda</Link></li>
+              <li><Link href="/iletisim" className="hover:text-brand-red transition-colors">İletişim</Link></li>
+            </ul>
           </div>
-
-          {/* Bölüm 3: İletişim (ARTIK DİNAMİK) */}
           <div>
-            <h4 className="font-poppins font-semibold tracking-wider uppercase">Bize Ulaşın</h4>
-            <div className="mt-4 flex flex-col space-y-2 text-gray-300">
-              {/* Statik metinler yerine, veritabanından gelen 'content' objesini kullanıyoruz. */}
-              <p>{content.address_text || 'Adres bilgisi girilmemiş.'}</p>
-              <p>{content.phone_number || 'Telefon bilgisi girilmemiş.'}</p>
-              {/* Çalışma saatlerini de ekleyebiliriz */}
-              <p className="mt-2">{content.working_days || ''}</p>
-              <p>{content.working_hours || ''}</p>
-            </div>
+            <h4 className="text-lg font-semibold tracking-wider uppercase mb-4">Bize Ulaşın</h4>
+            <address className="not-italic space-y-2 text-brand-muted">
+              <p>{address}</p>
+              {phone && <p><strong>Telefon:</strong> {phone}</p>}
+              {email && <p><strong>Email:</strong> {email}</p>}
+            </address>
           </div>
-
         </div>
-
-        {/* Alt Bölüm: Telif Hakkı */}
-        <div className="mt-8 pt-8 border-t border-gray-700 text-center text-gray-500 text-sm">
-          <p>© {currentYear} Efsane Pide. Tüm Hakları Saklıdır.</p>
+        <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm text-brand-muted">
+          <p>© {new Date().getFullYear()} {siteTitle}. Tüm hakları saklıdır.</p>
         </div>
       </div>
     </footer>
   );
-};
-
-// Footer bileşeninde "export default async function" kullanıldığı için,
-// "export default Footer;" satırına artık gerek yoktur.
+}
