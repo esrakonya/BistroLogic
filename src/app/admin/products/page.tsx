@@ -6,6 +6,7 @@ import ProductsTable from '@/components/admin/ProductsTable';
 import ProductModal from '@/components/admin/ProductModal';
 import TableSkeleton from '@/components/skeletons/TableSkeleton';
 import type { CleanProduct } from '@/lib/types';
+import { PlusIcon } from '@heroicons/react/24/solid';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<CleanProduct[]>([]);
@@ -14,12 +15,9 @@ export default function ProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CleanProduct | null>(null);
 
-  // Bu fonksiyon, tüm veri çekme ve yenileme işlemlerinin merkezidir.
   const fetchProducts = useCallback(async () => {
-    // setLoading(true); // Yenileme sırasında tam ekran yükleme olmasın
     setError(null);
     try {
-      // Admin paneli için özel olarak oluşturduğumuz API rotasını kullanıyoruz.
       const res = await fetch(`/api/admin/products?v=${new Date().getTime()}`);
       if (!res.ok) throw new Error('Ürün verisi çekilemedi.');
       const data = await res.json();
@@ -35,43 +33,48 @@ export default function ProductsPage() {
     fetchProducts(); 
   }, [fetchProducts]);
 
-  // Bu fonksiyon, bir alt bileşendeki (Modal veya Table) işlemden sonra
-  // veriyi yeniden çekmek için kullanılır.
-  const handleDataChange = () => {
-    fetchProducts();
-  };
-  
+  const handleDataChange = () => { fetchProducts(); };
   const handleOpenNewModal = () => { setEditingProduct(null); setIsModalOpen(true); };
   const handleOpenEditModal = (product: CleanProduct) => { setEditingProduct(product); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setEditingProduct(null); };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-poppins font-bold">Ürün Yönetimi</h1>
-        <button onClick={handleOpenNewModal} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-          + Yeni Ürün Ekle
+    // DEĞİŞİKLİK: Sayfa genel bir 'space-y' ile daha düzenli hale getirildi.
+    <div className="space-y-8">
+      {/* DEĞİŞİKLİK: Başlık ve Buton Alanı */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-poppins font-bold text-gray-800">Ürün Yönetimi</h1>
+          <p className="mt-1 text-gray-500">Mevcut ürünleri düzenleyin veya yeni lezzetler ekleyin.</p>
+        </div>
+        <button 
+          onClick={handleOpenNewModal} 
+          className="inline-flex items-center gap-2 bg-brand-red hover:bg-red-700 text-white font-bold py-2.5 px-5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Yeni Ürün Ekle
         </button>
       </div>
       
-      {loading ? (
-        <TableSkeleton rows={5} />
-      ) : error ? (
-        <p className="text-red-500">Hata: {error}</p>
-      ) : (
-        // Veriyi, düzenleme ve silme fonksiyonlarını prop olarak 'ProductsTable'a gönderiyoruz.
-        <ProductsTable 
-          products={products} 
-          onEdit={handleOpenEditModal} 
-          onDeleteSuccess={handleDataChange} 
-        />
-      )}
+      <div className="bg-white p-6 rounded-2xl shadow-lg">
+        {loading ? (
+          <TableSkeleton rows={5} />
+        ) : error ? (
+          <p className="text-red-500">Hata: {error}</p>
+        ) : (
+          <ProductsTable 
+            products={products} 
+            onEdit={handleOpenEditModal} 
+            onDeleteSuccess={handleDataChange} 
+          />
+        )}
+      </div>
       
       <ProductModal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal} 
         product={editingProduct}
-        onSaveSuccess={handleDataChange} // Kaydetme başarılı olunca da veriyi yenile
+        onSaveSuccess={handleDataChange}
       />
     </div>
   );

@@ -1,5 +1,5 @@
-// Dosya Yolu: src/app/admin/layout.tsx
-'use client'; // usePathname hook'unu kullanmak için bu gerekli
+// Dosya Yolu: /src/app/admin/layout.tsx
+'use client'; 
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,20 +9,18 @@ import {
   DocumentTextIcon,
   ArrowRightStartOnRectangleIcon,
   UserCircleIcon,
-} from '@heroicons/react/24/outline'; // Outline (ince) ikonlar daha zarif durur
+} from '@heroicons/react/24/outline';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 
-// Admin menüsündeki her bir linkin yapısını tanımlayan tip
 type NavLink = {
   name: string;
   href: string;
   icon: React.ElementType;
 };
 
-// Menü linklerimizi bir dizi olarak tanımlıyoruz. Bu, yeni linkler eklemeyi kolaylaştırır.
 const navLinks: NavLink[] = [
   { name: 'Ana Panel', href: '/admin', icon: HomeIcon },
   { name: 'Ürün Yönetimi', href: '/admin/products', icon: RectangleStackIcon },
@@ -34,12 +32,11 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname(); // O anki aktif yolu (URL) almamızı sağlar
+  const pathname = usePathname(); 
   const supabase = createClientComponentClient();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
-  // Kullanıcı bilgisini almak için
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -48,55 +45,60 @@ export default function AdminLayout({
     getUser();
   }, [supabase]);
 
-  // Çıkış yapma fonksiyonu
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.refresh(); 
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sol Taraftaki Yan Menü (Sidebar) */}
-      <aside className="w-64 flex-shrink-0 bg-brand-dark text-gray-300 flex flex-col">
-        <div className="h-20 flex items-center justify-center border-b border-gray-700">
-          <Link href="/" className="text-white font-poppins font-bold text-xl tracking-wider">
+    // DEĞİŞİKLİK: Arka plan rengi daha yumuşak bir gri (bg-gray-50) olarak güncellendi.
+    <div className="flex min-h-screen bg-gray-50 font-sans">
+
+      {/* --- YAN MENÜ (SIDEBAR) --- */}
+      {/* DEĞİŞİKLİK: Sidebar arka planı, ana temayla uyumlu 'brand-dark' yerine daha koyu bir 'gray-800' oldu.
+          Bu, panelin siteden farklı bir 'yönetim aracı' olduğunu hissettirir. */}
+      <aside className="w-64 flex-shrink-0 bg-gray-800 text-gray-300 flex flex-col shadow-lg">
+        {/* Logo Alanı */}
+        <div className="h-20 flex items-center justify-center border-b border-gray-700/50">
+          <Link href="/" className="text-white font-poppins font-bold text-xl tracking-wider hover:opacity-80 transition-opacity">
             PİDE<span className="text-brand-yellow">EFSANESİ</span>
           </Link>
         </div>
         
-        <nav className="flex-grow px-4 py-6">
+        {/* Menü Linkleri */}
+        <nav className="flex-grow px-4 py-6 space-y-2">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.name}
                 href={link.href}
                 className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 ${
                   isActive
-                    ? 'bg-brand-red text-white' // Aktif linkin stili
-                    : 'hover:bg-gray-700 hover:text-white' // Normal linkin stili
+                    ? 'bg-brand-red text-white shadow-inner' // Aktif link stili daha belirgin
+                    : 'hover:bg-gray-700 hover:text-white'
                 }`}
               >
-                <link.icon className="h-6 w-6 mr-3" />
-                <span>{link.name}</span>
+                <link.icon className="h-6 w-6 mr-4" />
+                <span className="font-semibold">{link.name}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Kullanıcı Bilgileri ve Çıkış Butonu */}
-        <div className="border-t border-gray-700 p-4">
+        {/* Kullanıcı Alanı */}
+        <div className="border-t border-gray-700/50 p-4">
           <div className="flex items-center">
-            <UserCircleIcon className="h-10 w-10 text-gray-400"/>
+            <UserCircleIcon className="h-10 w-10 text-gray-500"/>
             <div className="ml-3">
-              <p className="text-sm font-medium text-white">
+              <p className="text-sm font-medium text-white truncate" title={user?.email || ''}>
                 {user ? user.email : 'Yükleniyor...'}
               </p>
               <button 
                 onClick={handleLogout} 
-                className="flex items-center text-xs text-gray-400 hover:text-brand-yellow"
+                className="group flex items-center text-xs text-gray-400 hover:text-brand-red transition-colors"
               >
-                <ArrowRightStartOnRectangleIcon className="h-4 w-4 mr-1" />
+                <ArrowRightStartOnRectangleIcon className="h-4 w-4 mr-1.5 transition-transform group-hover:translate-x-1" />
                 Çıkış Yap
               </button>
             </div>
@@ -104,9 +106,12 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Sağ Taraftaki Ana İçerik Alanı */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto">
-        {children}
+      {/* --- ANA İÇERİK ALANI --- */}
+      {/* DEĞİŞİKLİK: İçerik alanı, bir 'container' içine alınarak daha düzenli hale getirildi. */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="container mx-auto py-10 px-6 md:px-10">
+          {children}
+        </div>
       </main>
     </div>
   );
