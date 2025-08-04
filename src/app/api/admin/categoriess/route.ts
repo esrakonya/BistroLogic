@@ -1,4 +1,4 @@
-// Dosya Yolu: src/app/api/categories/route.ts
+// Dosya Yolu: src/app/api/admin/categoriess/route.ts
 
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';

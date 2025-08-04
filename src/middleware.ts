@@ -4,40 +4,43 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Bu fonksiyon, bir kullanıcı bir sayfaya girmeye çalıştığında otomatik olarak çalışır.
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  
-  // Supabase istemcisini middleware için özel bir yöntemle oluşturuyoruz.
   const supabase = createMiddlewareClient({ req, res });
   
-  // Kullanıcının o anki oturum (session) bilgisini alıyoruz.
   const { data: { session } } = await supabase.auth.getSession();
 
-  // EĞER KULLANICI GİRİŞ YAPMAMIŞSA (session yoksa)
-  // VE gitmek istediği sayfa /admin ile başlıyorsa
-  if (!session && req.nextUrl.pathname.startsWith('/admin')) {
-    // Onu ana sayfaya yönlendir (veya doğrudan /login'e de yönlendirebiliriz).
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/login';
-    return NextResponse.redirect(redirectUrl);
+  // --- YENİ VE AKILLI KORUMA MANTIĞI ---
+
+  // 1. KURAL: Kullanıcı giriş yapmamışsa...
+  if (!session) {
+    // A) ...ve bir API yoluna gitmeye çalışıyorsa (/api/admin/...)...
+    if (req.nextUrl.pathname.startsWith('/api/admin')) {
+      // ...ona bir HTML sayfası değil, bir JSON hatası döndür. Bu, frontend'in çökmesini engeller.
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // B) ...ve bir admin sayfasına gitmeye çalışıyorsa (/admin)...
+    if (req.nextUrl.pathname.startsWith('/admin')) {
+      // ...onu giriş sayfasına yönlendir.
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.pathname = '/login';
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
-  // EĞER KULLANICI GİRİŞ YAPMIŞSA (session varsa)
-  // VE gitmek istediği sayfa /login ise
+  // 2. KURAL: Kullanıcı giriş yapmışsa ve /login sayfasına gitmeye çalışıyorsa...
   if (session && req.nextUrl.pathname.startsWith('/login')) {
-    // Onu zaten giriş yaptığı için admin paneline yönlendir.
+    // ...onu zaten giriş yaptığı için admin paneline yönlendir.
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/admin';
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Diğer tüm durumlarda, kullanıcının gitmek istediği yere gitmesine izin ver.
   return res;
 }
 
-// Bu config, middleware'in hangi sayfalarda çalışacağını belirtir.
-// "matcher" ile sadece /admin ve altındaki sayfaları izlemesini söylüyoruz.
+// Config'i, API yollarını da içerecek şekilde güncelliyoruz.
 export const config = {
-  matcher: ['/admin/:path*', '/login'],
+  matcher: ['/admin/:path*', '/login', '/api/admin/:path*'],
 };
