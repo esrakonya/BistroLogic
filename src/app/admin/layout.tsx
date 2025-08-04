@@ -14,6 +14,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
+import { TagIcon } from '@heroicons/react/16/solid';
 
 type NavLink = {
   name: string;
@@ -24,6 +25,7 @@ type NavLink = {
 const navLinks: NavLink[] = [
   { name: 'Ana Panel', href: '/admin', icon: HomeIcon },
   { name: 'Ürün Yönetimi', href: '/admin/products', icon: RectangleStackIcon },
+  { name: 'Kategori Yönetimi', href: '/admin/categories', icon: TagIcon },
   { name: 'İçerik Yönetimi', href: '/admin/content', icon: DocumentTextIcon },
 ];
 
