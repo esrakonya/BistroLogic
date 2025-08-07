@@ -1,9 +1,10 @@
-// Dosya Yolu: src/app/admin/content/page.tsx
+// Dosya Yolu: /src/app/admin/content/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 import { Transition } from '@headlessui/react';
+import TableSkeleton from '@/components/skeletons/TableSkeleton'; // Skeleton'ı da import edelim
 
 interface SiteContent {
   id: number;
@@ -21,9 +22,18 @@ export default function ContentPage() {
 
   const fetchContent = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/admin/content', { cache: 'no-store' });
-      if (!res.ok) throw new Error('İçerik verisi alınamadı.');
+      // DEĞİŞİKLİK: Kimlik doğrulama için 'credentials: include' eklendi.
+      const res = await fetch('/api/admin/content', { 
+        cache: 'no-store',
+        credentials: 'include' 
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'İçerik verisi alınamadı.');
+      }
       const data = await res.json();
       setContents(data);
     } catch (err: any) {
@@ -47,8 +57,10 @@ export default function ContentPage() {
     setSuccess(null);
     setIsSubmitting(true);
 
+    // DEĞİŞİKLİK: Kimlik doğrulama için 'credentials: include' eklendi.
     const res = await fetch('/api/admin/content', {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contents),
     });
@@ -65,7 +77,20 @@ export default function ContentPage() {
     }
   };
 
-  if (loading) return <div>İçerikler yükleniyor...</div>;
+  // Yükleme durumu için daha iyi bir iskelet gösterimi
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-poppins font-bold text-gray-800">Site İçerik Yönetimi</h1>
+          <p className="mt-1 text-gray-500">Web sitesinde görünen metinleri ve bilgileri buradan güncelleyin.</p>
+        </div>
+        <div className="bg-white p-8 rounded-2xl shadow-lg">
+          <TableSkeleton rows={5} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -74,7 +99,6 @@ export default function ContentPage() {
         <p className="mt-1 text-gray-500">Web sitesinde görünen metinleri ve bilgileri buradan güncelleyin.</p>
       </div>
       
-      {/* DEĞİŞİKLİK: Animasyonlu Bildirim Alanı */}
       <div className="fixed top-5 right-5 z-50 w-80">
         <Transition
           show={!!success}
@@ -94,7 +118,12 @@ export default function ContentPage() {
         <Transition
           show={!!error}
           as={Fragment}
-          // ... aynı transitionlar ...
+          enter="transform ease-out duration-300 transition"
+          enterFrom="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+          enterTo="translate-y-0 opacity-100 sm:translate-x-0"
+          leave="transition ease-in duration-100"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
         >
           <div className="p-4 bg-red-500 text-white rounded-lg shadow-lg flex items-center gap-3">
             <XCircleIcon className="h-6 w-6"/>
@@ -103,20 +132,28 @@ export default function ContentPage() {
         </Transition>
       </div>
       
-      {/* DEĞİŞİKLİK: Form Tasarımı */}
+      {/* Hata mesajını formun üstünde göstermek daha iyi olabilir. */}
+      {error && !success && (
+         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+           <p className="font-bold">Bir Hata Oluştu</p>
+           <p>{error}</p>
+         </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg space-y-8">
         {contents.map(content => (
           <div key={content.key}>
             <label htmlFor={content.key} className="block text-gray-800 font-semibold mb-2">
               {content.description || content.key}
             </label>
-            {content.value.includes('\n') || content.key.includes('text') ? (
+            {/* Form alanlarının 'textarea' veya 'input' olup olmadığına karar veren mantık */}
+            {content.value.length > 50 || content.value.includes('\n') || content.key.includes('text') || content.key.includes('address') ? (
               <textarea
                 id={content.key}
                 value={content.value}
                 onChange={e => handleInputChange(content.key, e.target.value)}
-                rows={5}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition"
+                rows={4}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red transition"
               />
             ) : (
               <input
@@ -124,7 +161,7 @@ export default function ContentPage() {
                 id={content.key}
                 value={content.value}
                 onChange={e => handleInputChange(content.key, e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red focus:border-transparent transition"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red transition"
               />
             )}
           </div>
@@ -134,7 +171,7 @@ export default function ContentPage() {
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="bg-brand-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="bg-brand-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Kaydediliyor...' : 'Tüm Değişiklikleri Kaydet'}
           </button>

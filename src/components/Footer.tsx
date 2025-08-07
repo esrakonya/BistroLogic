@@ -1,6 +1,8 @@
 // Dosya Yolu: /src/components/Footer.tsx
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { FaInstagram, FaFacebook, FaTwitter } from 'react-icons/fa'; // Sosyal medya ikonları için
+import { FaInstagram, FaFacebook, FaTwitter } from 'react-icons/fa'; // Facebook ve Twitter ikonları, linkler eklenirse diye kalabilir.
 
 const SocialLink = ({ href, icon: Icon }: { href: string; icon: React.ElementType }) => (
   <a href={href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
@@ -8,28 +10,45 @@ const SocialLink = ({ href, icon: Icon }: { href: string; icon: React.ElementTyp
   </a>
 );
 
-export default function Footer() {
+const getContentValue = (contents: any[], key: string) => {
+  return contents?.find(c => c.key === key)?.value || '';
+};
+
+export default async function Footer() {
+  const supabase = createServerComponentClient({ cookies });
+
+  const { data: contents, error } = await supabase.from('site_content').select('key, value');
+  
+  if (error) {
+    console.error("Footer için site içeriği çekilemedi:", error);
+    return <footer className="bg-brand-dark text-white p-4 text-center">Footer yüklenemedi.</footer>;
+  }
+  
+  const safeContents = contents || [];
+  
+  // DEĞİŞİKLİK: Değişken adlarını ve key'leri sizin veritabanınızdakiyle eşleştirdim.
+  const slogan = getContentValue(safeContents, 'footer_slogan');
+  const phoneNumber = getContentValue(safeContents, 'phone_number');
+  const address = getContentValue(safeContents, 'address_text');
+  const instagramUrl = getContentValue(safeContents, 'social_instagram');
+  // Facebook ve Twitter sizde olmadığı için, bu değişkenler boş dönecek ve ikonlar görünmeyecek.
+  const facebookUrl = getContentValue(safeContents, 'social_facebook');
+  const twitterUrl = getContentValue(safeContents, 'social_twitter');
+  
   return (
-    // DEĞİŞİKLİK 1: Ana Dikey Boşluk Azaltıldı
-    // Eskiden py-16 md:py-20 gibi yüksek bir değer olabilirdi.
-    // Şimdi mobil için py-10 (40px), web için md:py-14 (56px) olarak daha kompakt hale getirildi.
-    <footer className="bg-brand-dark text-white font-sans py-5 md:py-14">
+    <footer className="bg-brand-dark text-white font-sans py-10 md:py-14">
       <div className="container mx-auto px-4">
-        
-        {/* Üst Kısım: Logo, Linkler ve Sosyal Medya */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
           
-          {/* Sol Sütun: Logo ve Slogan */}
-          <div className="flex flex-col items-center md:items-start">
+          {/* Sütun 1: Logo ve Slogan */}
+          <div className="flex flex-col items-center sm:items-start">
             <Link href="/" className="text-white font-poppins font-bold text-2xl tracking-wider">
               EFSANE<span className="text-brand-yellow">PİDE</span>
             </Link>
-            <p className="mt-4 text-gray-400 text-sm max-w-xs">
-              Geleneksel lezzet, modern sunum. Odun ateşinden sofranıza.
-            </p>
+            <p className="mt-4 text-gray-400 text-sm max-w-xs">{slogan}</p>
           </div>
 
-          {/* Orta Sütun: Hızlı Menü */}
+          {/* Sütun 2: Hızlı Menü */}
           <div>
             <h3 className="font-bold uppercase tracking-wider text-gray-300">Hızlı Menü</h3>
             <div className="mt-4 flex flex-col space-y-2">
@@ -39,26 +58,35 @@ export default function Footer() {
               <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">İletişim</Link>
             </div>
           </div>
+
+          {/* Sütun 3: İletişim Bilgileri */}
+          <div>
+            <h3 className="font-bold uppercase tracking-wider text-gray-300">İletişim</h3>
+            <div className="mt-4 flex flex-col space-y-2 text-gray-400">
+              {/* DEĞİŞİKLİK: 'phoneNumber' ve 'address' değişkenleri kullanılıyor */}
+              {phoneNumber && <a href={`tel:${phoneNumber}`} className="hover:text-white">{phoneNumber}</a>}
+              {address && <p>{address}</p>}
+            </div>
+          </div>
           
-          {/* Sağ Sütun: Sosyal Medya */}
+          {/* Sütun 4: Sosyal Medya */}
           <div>
             <h3 className="font-bold uppercase tracking-wider text-gray-300">Bizi Takip Edin</h3>
-            <div className="mt-4 flex justify-center md:justify-start space-x-5">
-              <SocialLink href="https://instagram.com" icon={FaInstagram} />
-              <SocialLink href="https://facebook.com" icon={FaFacebook} />
-              <SocialLink href="https://twitter.com" icon={FaTwitter} />
+            <div className="mt-4 flex justify-center sm:justify-start space-x-5">
+              {/* DEĞİŞİKLİK: Sadece 'instagramUrl' kullanılıyor */}
+              {instagramUrl && <SocialLink href={instagramUrl} icon={FaInstagram} />}
+              {/* Facebook ve Twitter URL'leri boş döneceği için bu linkler render edilmeyecek */}
+              {facebookUrl && <SocialLink href={facebookUrl} icon={FaFacebook} />}
+              {twitterUrl && <SocialLink href={twitterUrl} icon={FaTwitter} />}
             </div>
           </div>
 
         </div>
 
-        {/* Alt Kısım: Telif Hakkı */}
-        {/* DEĞİŞİKLİK 2: İçerik ve Alt Kısım Arası Boşluk Azaltıldı */}
-        {/* Eskiden mt-16 gibi bir değer olabilirdi. Şimdi mt-10 (40px) olarak ayarlandı. */}
+        {/* Telif Hakkı Kısmı */}
         <div className="mt-10 pt-8 border-t border-gray-700 text-center text-sm text-gray-500">
           <p>&copy; {new Date().getFullYear()} Pide Efsanesi. Tüm Hakları Saklıdır.</p>
         </div>
-
       </div>
     </footer>
   );

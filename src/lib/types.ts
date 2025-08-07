@@ -14,3 +14,10 @@ export interface CleanProduct {
     id: number;
     name: string;
   }
+
+  export interface SiteContent {
+    id: number;
+    key: string;
+    value: string;
+    description: string;
+  }

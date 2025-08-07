@@ -43,7 +43,7 @@ export default async function RootLayout({
         <main className="flex-grow">
           {children}
         </main>
-        <Footer content={siteContentObject} />
+        <Footer />
         {/* YENİ: Toast bildirimlerinin görüneceği yer */}
         <ToastContainer
           position="bottom-right"
