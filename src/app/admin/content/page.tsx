@@ -22,7 +22,7 @@ export default function ContentPage() {
   const fetchContent = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/content', { cache: 'no-store' });
+      const res = await fetch('/api/admin/content', { cache: 'no-store' });
       if (!res.ok) throw new Error('İçerik verisi alınamadı.');
       const data = await res.json();
       setContents(data);
@@ -47,7 +47,7 @@ export default function ContentPage() {
     setSuccess(null);
     setIsSubmitting(true);
 
-    const res = await fetch('/api/content', {
+    const res = await fetch('/api/admin/content', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contents),

@@ -1,20 +1,18 @@
-// Dosya Yolu: src/app/api/menu/route.ts
+// Dosya Yolu: /src/app/api/menu/route.ts
 
-import { createClient } from '@supabase/supabase-js';
+// DEĞİŞİKLİK: 'createClient' yerine, Next.js için özel olarak tasarlanmış
+// 'createRouteHandlerClient' ve 'cookies' import edildi.
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  // Değişken adını doğru hale getirdik.
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceKey) {
-    return NextResponse.json({ error: "Sunucu konfigürasyon hatası." }, { status: 500 });
-  }
-
-  const supabase = createClient(supabaseUrl, serviceKey);
+  // DEĞİŞİKLİK: Artık Supabase istemcisini bu güvenli yöntemle oluşturuyoruz.
+  // Bu, .env'deki anonim anahtarı otomatik olarak kullanır ve RLS kurallarına uyar.
+  // Artık manuel olarak URL ve KEY kontrolü yapmamıza gerek yok.
+  const supabase = createRouteHandlerClient({ cookies });
 
   try {
     const { data, error } = await supabase
@@ -34,15 +32,17 @@ export async function GET() {
           )
         )
       `)
+      // 'display_order' sütununuz varsa bu satırı aktif bırakın, yoksa silebilirsiniz.
+      // Eğer hata veriyorsa, .order('id', { ascending: true }) olarak değiştirin.
       .order('display_order', { ascending: true });
 
     if (error) {
       console.error("Supabase API Hatası (/api/menu):", error);
-      return NextResponse.json({ error: "Veritabanı sorgu hatası.", details: error.message }, { status: 500 });
+      // Hata mesajını daha anlaşılır hale getirdik.
+      throw new Error(error.message);
     }
 
-    // ----- VERİ TEMİZLEME İŞLEMİNİN DOĞRU HALİ -----
-    // Supabase'den gelen karmaşık veriyi, arayüzün kolayca kullanabileceği bir formata dönüştürüyoruz.
+    // Veri temizleme işlemi aynı kalıyor, bu kısım zaten doğruydu.
     const cleanedData = data.map(category => ({
       id: category.id,
       name: category.name,
@@ -53,18 +53,14 @@ export async function GET() {
         price: product.price,
         is_available: product.is_available,
         image_url: product.image_url,
-        // İç içe geçmiş 'product_ingredients' ve 'ingredients' yapısını,
-        // basit bir string dizisine ('ingredients: ["Kıyma", "Domates"]') dönüştürüyoruz.
         ingredients: product.product_ingredients.map((pi: any) => pi.ingredients.name)
       }))
     }));
-    // -----------------------------------------------
 
-    // Temizlenmiş veriyi arayüze gönderiyoruz.
     return NextResponse.json(cleanedData);
 
   } catch (err: any) {
-    console.error("API rotasında genel bir hata oluştu:", err);
-    return NextResponse.json({ error: 'Sunucuda beklenmedik bir hata oluştu.', details: err.message }, { status: 500 });
+    console.error("API rotasında (/api/menu) genel bir hata oluştu:", err);
+    return NextResponse.json({ error: 'Menü verisi alınırken bir hata oluştu.' }, { status: 500 });
   }
 }

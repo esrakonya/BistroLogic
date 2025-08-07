@@ -31,11 +31,16 @@ export default function CategoryModal({ isOpen, onClose, category, onSaveSuccess
     setIsSubmitting(true);
 
     try {
-      const apiEndpoint = category ? `/api/admin/categories/${category.id}` : '/api/admin/categories';
+      //const apiEndpoint = category ? `/api/admin/categories/${category.id}` : '/api/admin/categories';
       const method = category ? 'PUT' : 'POST';
       
+      const apiEndpoint = category 
+        ? `/api/admin/categories/${category.id}` 
+        : '/api/admin/categories';
+      
       const res = await fetch(apiEndpoint, {
-        method,
+        method: category ? 'PUT' : 'POST',
+        credentials: 'include', // Bu çok önemli!
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       });

@@ -16,7 +16,10 @@ export default function ProductsTable({ products, onEdit, onDeleteSuccess }: Pro
   const handleDelete = async (productId: number) => {
     if (window.confirm('Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
       try {
-        const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+        const res = await fetch(`/api/admin/products/${productId}`, { 
+          method: 'DELETE',
+          credentials: 'include' // Bu, kimlik doğrulama için kritik öneme sahiptir.
+        });
         if (!res.ok) throw new Error('Ürün silinemedi.');
         onDeleteSuccess();
       } catch (error) {

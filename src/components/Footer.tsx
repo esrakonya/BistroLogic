@@ -1,62 +1,64 @@
+// Dosya Yolu: /src/components/Footer.tsx
 import Link from 'next/link';
-// YENİ: Merkezi tip tanımını `data.ts` dosyasından import ediyoruz.
-// `import type` kullanımı, bunun sadece bir tip olduğunu ve derleme sırasında
-// JavaScript kodundan tamamen kaldırılabileceğini belirtir. Bu en iyi pratiktir.
-import type { SiteContent } from '@/lib/data';
+import { FaInstagram, FaFacebook, FaTwitter } from 'react-icons/fa'; // Sosyal medya ikonları için
 
-// ARTIK BU YEREL TANIMA İHTİYAÇ YOK. SİLİNMELİ.
-/*
-interface SiteContent {
-  site_title?: string;
-  footer_about?: string;
-  footer_contact_address?: string;
-  footer_contact_phone?: string;
-  footer_contact_email?: string;
-}
-*/
+const SocialLink = ({ href, icon: Icon }: { href: string; icon: React.ElementType }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+    <Icon className="h-6 w-6" />
+  </a>
+);
 
-interface FooterProps {
-  // Artık Footer, projenin her yerinde aynı olan `SiteContent` tipini bekliyor.
-  content: SiteContent | null;
-}
-
-export default function Footer({ content }: FooterProps) {
-  const siteTitle = content?.site_title || "Pide Efsanesi";
-  const aboutText = content?.footer_about || "Lezzetin ve geleneğin buluşma noktası.";
-  const address = content?.footer_contact_address || "Adres bilgisi yakında eklenecektir.";
-  const phone = content?.footer_contact_phone || "";
-  const email = content?.footer_contact_email || "";
-
+export default function Footer() {
   return (
-    <footer className="bg-brand-dark text-white font-sans">
-      {/* Footer'ın geri kalan içeriği aynı... */}
-      <div className="container mx-auto px-4 py-12">
+    // DEĞİŞİKLİK 1: Ana Dikey Boşluk Azaltıldı
+    // Eskiden py-16 md:py-20 gibi yüksek bir değer olabilirdi.
+    // Şimdi mobil için py-10 (40px), web için md:py-14 (56px) olarak daha kompakt hale getirildi.
+    <footer className="bg-brand-dark text-white font-sans py-5 md:py-14">
+      <div className="container mx-auto px-4">
+        
+        {/* Üst Kısım: Logo, Linkler ve Sosyal Medya */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
-          <div>
-            <h3 className="text-2xl font-serif italic font-bold mb-4">{siteTitle}</h3>
-            <p className="text-brand-muted max-w-xs mx-auto md:mx-0">{aboutText}</p>
+          
+          {/* Sol Sütun: Logo ve Slogan */}
+          <div className="flex flex-col items-center md:items-start">
+            <Link href="/" className="text-white font-poppins font-bold text-2xl tracking-wider">
+              EFSANE<span className="text-brand-yellow">PİDE</span>
+            </Link>
+            <p className="mt-4 text-gray-400 text-sm max-w-xs">
+              Geleneksel lezzet, modern sunum. Odun ateşinden sofranıza.
+            </p>
           </div>
+
+          {/* Orta Sütun: Hızlı Menü */}
           <div>
-            <h4 className="text-lg font-semibold tracking-wider uppercase mb-4">Menü</h4>
-            <ul className="space-y-2">
-              <li><Link href="/" className="hover:text-brand-red transition-colors">Ana Sayfa</Link></li>
-              <li><Link href="/menu" className="hover:text-brand-red transition-colors">Lezzet Menümüz</Link></li>
-              <li><Link href="/hakkimizda" className="hover:text-brand-red transition-colors">Hakkımızda</Link></li>
-              <li><Link href="/iletisim" className="hover:text-brand-red transition-colors">İletişim</Link></li>
-            </ul>
+            <h3 className="font-bold uppercase tracking-wider text-gray-300">Hızlı Menü</h3>
+            <div className="mt-4 flex flex-col space-y-2">
+              <Link href="/" className="text-gray-400 hover:text-white transition-colors">Ana Sayfa</Link>
+              <Link href="/menu" className="text-gray-400 hover:text-white transition-colors">Menü</Link>
+              <Link href="/about" className="text-gray-400 hover:text-white transition-colors">Hakkımızda</Link>
+              <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">İletişim</Link>
+            </div>
           </div>
+          
+          {/* Sağ Sütun: Sosyal Medya */}
           <div>
-            <h4 className="text-lg font-semibold tracking-wider uppercase mb-4">Bize Ulaşın</h4>
-            <address className="not-italic space-y-2 text-brand-muted">
-              <p>{address}</p>
-              {phone && <p><strong>Telefon:</strong> {phone}</p>}
-              {email && <p><strong>Email:</strong> {email}</p>}
-            </address>
+            <h3 className="font-bold uppercase tracking-wider text-gray-300">Bizi Takip Edin</h3>
+            <div className="mt-4 flex justify-center md:justify-start space-x-5">
+              <SocialLink href="https://instagram.com" icon={FaInstagram} />
+              <SocialLink href="https://facebook.com" icon={FaFacebook} />
+              <SocialLink href="https://twitter.com" icon={FaTwitter} />
+            </div>
           </div>
+
         </div>
-        <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm text-brand-muted">
-          <p>© {new Date().getFullYear()} {siteTitle}. Tüm hakları saklıdır.</p>
+
+        {/* Alt Kısım: Telif Hakkı */}
+        {/* DEĞİŞİKLİK 2: İçerik ve Alt Kısım Arası Boşluk Azaltıldı */}
+        {/* Eskiden mt-16 gibi bir değer olabilirdi. Şimdi mt-10 (40px) olarak ayarlandı. */}
+        <div className="mt-10 pt-8 border-t border-gray-700 text-center text-sm text-gray-500">
+          <p>&copy; {new Date().getFullYear()} Pide Efsanesi. Tüm Hakları Saklıdır.</p>
         </div>
+
       </div>
     </footer>
   );

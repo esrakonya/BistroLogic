@@ -1,52 +1,47 @@
 // Dosya Yolu: /src/app/api/admin/products/route.ts
-
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
-// Bu satır, Next.js'e bu rotanın her zaman dinamik olarak çalıştırılmasını
-// ve asla önbelleğe alınmamasını söyler. Bu çok önemli.
 export const dynamic = 'force-dynamic';
 
+/**
+ * [Admin] Tüm ürünleri, kategori adlarıyla birlikte listeler (GET).
+ */
 export async function GET() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.json({ error: 'Supabase URL veya Key yapılandırılmamış.' }, { status: 500 });
-  }
-
-  // Supabase'in REST API'sini doğrudan 'fetch' ile çağırıyoruz.
-  // Bu, bize önbellekleme üzerinde tam kontrol sağlar.
-  const endpoint = `${supabaseUrl}/rest/v1/products?select=*,categories(name)&order=id`;
-
+  const supabase = createRouteHandlerClient({ cookies });
   try {
-    const response = await fetch(endpoint, {
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-      },
-      // DEĞİŞİKİK BURADA: Bu 'cache' ayarı, Next.js'in bu isteğin
-      // sonucunu önbelleğe almasını engeller. Sorunun ana çözümü budur.
-      cache: 'no-store',
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Supabase\'den veri alınamadı.');
-    }
+    const { data, error } = await supabase.from('products').select('*, categories(name)').order('id');
+    if (error) throw error;
 
-    const data = await response.json();
-
-    // Sizin kodunuzdaki aynı veri formatlama mantığını kullanıyoruz.
-    const cleanData = data.map((p: any) => ({
-      ...p,
-      categoryName: p.categories?.name || null,
-      categories: undefined, // Gereksiz alanı temizliyoruz
-    }));
-
-    return NextResponse.json(cleanData);
-
+    const formattedData = data.map(p => ({ ...p, categoryName: p.categories?.name || null, categories: undefined }));
+    return NextResponse.json(formattedData);
   } catch (error: any) {
-    console.error("API Hatası: /api/admin/products", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+/**
+ * [Admin] Yeni bir ürün ekler (POST).
+ */
+export async function POST(request: Request) {
+  const supabase = createRouteHandlerClient({ cookies });
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
+
+    const productData = await request.json();
+    const { data, error } = await supabase.from('products').insert([productData]).select();
+    if (error) throw error;
+    
+    revalidatePath('/admin/products');
+    revalidatePath('/menu');
+    return NextResponse.json(data);
+  } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

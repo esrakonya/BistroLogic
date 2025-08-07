@@ -18,7 +18,7 @@ export default function CategoriesPage() {
   const fetchCategories = useCallback(async () => {
     // setLoading(true); // Yenileme sırasında tam ekran yükleme olmasın diye kapatılabilir
     try {
-      const res = await fetch(`/api/admin/categories?v=${new Date().getTime()}`);
+      const res = await fetch(`/api/admin/categories?v=${new Date().getTime()}`, { credentials: 'include' });
       if (!res.ok) throw new Error('Kategoriler çekilemedi.');
       const data = await res.json();
       setCategories(data);

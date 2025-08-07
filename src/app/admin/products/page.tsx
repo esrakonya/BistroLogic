@@ -29,8 +29,8 @@ export default function ProductsPage() {
     try {
       // İki API isteğini aynı anda yapıyoruz (daha performanslı)
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch(`/api/admin/products?v=${new Date().getTime()}`),
-        fetch(`/api/categories?v=${new Date().getTime()}`)
+        fetch(`/api/admin/products?v=${new Date().getTime()}`, { credentials: 'include' }),
+        fetch(`/api/admin/categories?v=${new Date().getTime()}`, { credentials: 'include' })
       ]);
 
       if (!productsRes.ok) throw new Error('Ürün verisi çekilemedi.');
@@ -75,7 +75,36 @@ export default function ProductsPage() {
     return Math.ceil(filteredCount / ITEMS_PER_PAGE);
   }, [allProducts, selectedCategory]);
 
-  const handleDataChange = () => { fetchProductsAndCategories(); };
+  const handleDataChange = () => {
+    // Önce veriyi yeniden çekiyoruz, bu 'allProducts' state'ini güncelleyecek.
+    fetchProductsAndCategories().then(() => {
+      // Veri çekildikten SONRA (bu yüzden .then() kullanıyoruz),
+      // mevcut sayfanın hala geçerli olup olmadığını kontrol ediyoruz.
+      
+      // 'filteredProducts' state'e bağlı olmadığı için, en güncel halini
+      // doğrudan 'allProducts' üzerinden yeniden hesaplamamız gerekir.
+      // Ancak 'useMemo' zaten state değişimine göre çalışacağı için,
+      // sadece sayfa numarasını kontrol etmemiz yeterli.
+
+      // Eğer mevcut sayfa numarası, yeni toplam sayfa sayısından büyükse
+      // (yani son sayfadaki son ürünü sildiysek), bir önceki sayfaya git.
+      // 'totalPages' yeniden hesaplandığında, bu kontrolü yapabiliriz.
+      // NOT: State güncellemeleri asenkron olduğu için, bu kontrolü
+      // bir sonraki render döngüsünde yapmak en garantisidir.
+      // Bunun en temiz yolu, totalPages'i izleyen bir useEffect kullanmaktır.
+      // Ama daha basit bir çözüm:
+      
+      const newFilteredLength = selectedCategory === 'all'
+        ? allProducts.length - 1 // Bir ürün silindiğini varsayıyoruz
+        : allProducts.filter(p => p.category_id?.toString() === selectedCategory).length -1;
+        
+      const newTotalPages = Math.ceil((newFilteredLength > 0 ? newFilteredLength : 0) / ITEMS_PER_PAGE);
+      
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      }
+    });
+  };
   const handleOpenNewModal = () => { setEditingProduct(null); setIsModalOpen(true); };
   const handleOpenEditModal = (product: CleanProduct) => { setEditingProduct(product); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setEditingProduct(null); };

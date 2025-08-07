@@ -7,6 +7,7 @@ export interface CleanProduct {
     categoryName: string | null;
     category_id: number;
     image_url: string | null;
+    is_featured: boolean;
   }
   
   export interface Category {
