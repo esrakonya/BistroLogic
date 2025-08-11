@@ -54,7 +54,7 @@ export default async function Footer() {
             <div className="mt-4 flex flex-col space-y-2">
               <Link href="/" className="text-gray-400 hover:text-white transition-colors">Ana Sayfa</Link>
               <Link href="/menu" className="text-gray-400 hover:text-white transition-colors">Menü</Link>
-              <Link href="/about" className="text-gray-400 hover:text-white transition-colors">Hakkımızda</Link>
+              {/* <Link href="/about" className="text-gray-400 hover:text-white transition-colors">Hakkımızda</Link> */}
               <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">İletişim</Link>
             </div>
           </div>

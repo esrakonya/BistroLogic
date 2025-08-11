@@ -36,7 +36,7 @@ const Navbar = () => {
               className="text-white font-poppins font-bold text-xl md:text-2xl tracking-wider"
               onClick={() => { if (isOpen) setIsOpen(false); }}
             >
-              EFSANE<span className="text-brand-yellow">PİDE</span>
+              EFSANE<span className="text-white">PİDE</span>
             </Link>
           </div>
 
@@ -45,7 +45,7 @@ const Navbar = () => {
             <div className="ml-10 flex items-baseline space-x-6">
               <Link href="/" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">Ana Sayfa</Link>
               <Link href="/menu" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">Menü</Link>
-              <Link href="/about" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">Hakkımızda</Link>
+              {/* <Link href="/about" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">Hakkımızda</Link> */}
               <Link href="/contact" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">İletişim</Link>
             </div>
           </div>
@@ -89,7 +89,7 @@ const Navbar = () => {
               {/* Daha dengeli bir görünüm için text-xl -> text-lg */}
               <Link href="/" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>Ana Sayfa</Link>
               <Link href="/menu" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>Menü</Link>
-              <Link href="/about" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>Hakkımızda</Link>
+              {/* <Link href="/about" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>Hakkımızda</Link> */}
               <Link href="/contact" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>İletişim</Link>
             </div>
         </div>

@@ -67,7 +67,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
             <Link href="/" className="text-brand-dark font-poppins font-bold text-3xl tracking-wider hover:opacity-80 transition-opacity">
-                PİDE<span className="text-brand-red">EFSANESİ</span>
+                EFSANE<span className="text-brand-red">PİDE</span>
             </Link>
             <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-gray-900">
               Admin Paneli Girişi
@@ -96,7 +96,7 @@ export default function LoginPage() {
             onSubmit={handleLogin} 
             className="mt-8 space-y-6 bg-white p-8 rounded-xl shadow-lg"
           >
-            <div className="rounded-md -space-y-px">
+            <div className="rounded-md space-y-4">
               <div>
                 <label htmlFor="email-address" className="sr-only">E-posta Adresi</label>
                 <input
@@ -107,7 +107,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="relative block w-full appearance-none rounded-t-md border border-gray-300 px-3 py-3 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-brand-red focus:outline-none focus:ring-brand-red"
+                  className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-3 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-brand-red focus:outline-none focus:ring-brand-red"
                   placeholder="E-posta Adresi"
                 />
               </div>
@@ -121,11 +121,12 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="relative block w-full appearance-none rounded-b-md border border-gray-300 px-3 py-3 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-brand-red focus:outline-none focus:ring-brand-red"
+                  className="relative block w-full appearance-none rounded-md border border-gray-300 px-3 py-3 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-brand-red focus:outline-none focus:ring-brand-red"
                   placeholder="Şifre"
                 />
               </div>
             </div>
+
 
             {error && (
               <p className="text-sm text-red-600 text-center">{error}</p>

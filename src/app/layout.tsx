@@ -23,8 +23,11 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Pide Efsanesi",
+  title: "Efsane Pide",
   description: "Şehrin en lezzetli pideleri!",
+  icons: {
+    icon: '/efsane-logo.png', 
+  },
 };
 
 export default async function RootLayout({
