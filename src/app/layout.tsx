@@ -1,30 +1,23 @@
-// Dosya Yolu: src/app/layout.tsx
-
-// Gerekli Next.js ve React tiplerini import ediyoruz
 import type { Metadata } from "next";
-
-// Varsayılan 'Inter' fontu yerine, kendi seçtiğimiz 'Poppins' ve 'Lato' fontlarını import ediyoruz
-import { Poppins, Lato } from 'next/font/google';
-
-// Projemizin ana CSS dosyasını (Tailwind direktiflerini içeren) import ediyoruz
+import { Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
-
-// Kendi oluşturduğumuz Navbar ve Footer bileşenlerini import ediyoruz
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-// Poppins fontunu, başlıklar için kullanmak üzere yapılandırıyoruz
+// Gövde metinleri için Poppins.
 const poppins = Poppins({
-  subsets: ['latin'], // Karakter seti
-  weight: ['400', '600', '700'], // İhtiyacımız olan yazı kalınlıkları
-  variable: '--font-poppins', // CSS'te bu isimle bir değişken oluşturacak
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-poppins',
+  weight: ['400', '500', '600', '700']
 });
 
-// Lato fontunu, genel metinler için kullanmak üzere yapılandırıyoruz
-const lato = Lato({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-lato',
+// Başlıklar için, özellikle italik stilini kullanacağımız Playfair Display.
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-playfair',
+  style: ['normal', 'italic'] // İtalik stilini de yüklüyoruz.
 });
 
 // Sitemizin tarayıcı sekmesinde ve arama sonuçlarında görünecek bilgilerini güncelliyoruz
@@ -50,7 +43,7 @@ export default function RootLayout({
         - `tailwind.config.js` dosyasında tanımladığımız özel arka plan (bg-brand-cream) ve metin (text-brand-dark) renklerini atıyoruz.
         - "flex flex-col min-h-screen" sınıfları ile Footer'ın her zaman sayfanın en dibinde kalmasını sağlıyoruz (yapışkan footer).
       */}
-      <body className={`${poppins.variable} ${lato.variable} font-lato bg-brand-cream text-brand-dark flex flex-col min-h-screen`}>
+      <body className={`${poppins.variable} ${playfair.variable} font-lato bg-brand-cream text-brand-dark flex flex-col min-h-screen`}>
         
         {/* Navbar bileşenimizi sayfanın en üstüne yerleştiriyoruz */}
         <Navbar />
