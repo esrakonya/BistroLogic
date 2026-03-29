@@ -3,15 +3,40 @@
 'use client'; 
 
 import { useState, useEffect, MouseEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import MenuSkeleton from '@/components/skeletons/MenuSkeleton';
 import ProductCard from '@/components/menu/ProductCard';
-// --- YENİ BİLEŞENİ İMPORT EDİYORUZ ---
 import ProductDetailModal from '@/components/menu/ProductDetailModal'; 
+import CategoryButton from '@/components/menu/CategoryButton'; 
 
-// Tiplerimizi burada daha sade tutabiliriz
+// Tipler
 interface Product { id: number; name: string; description: string | null; price: number; image_url: string | null; ingredients: { name: string }[]; }
 interface Category { id: number; name: string; products: Product[]; }
 interface ProductWithCategoryName extends Product { categoryName: string; }
+
+// Animasyon Variant'ları
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+}as const;
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 100,
+    }
+  },
+}as const;
+
 
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -56,9 +81,7 @@ export default function MenuPage() {
     if (selectedProduct) {
       setSelectedProduct(null);
     }
-    setTimeout(() => {
-      setSelectedCategory(categoryId);
-    }, 150);
+    setSelectedCategory(categoryId);
   };
 
   const handleProductClick = (product: ProductWithCategoryName) => {
@@ -70,59 +93,77 @@ export default function MenuPage() {
 
   return (
     <div className="bg-brand-background min-h-screen font-sans">
-      <div className="container mx-auto px-4 py-16 md:py-24">
-        <div className="flex flex-col gap-10 md:gap-14">
-          <div className="text-center">
-            <h1 className="font-serif text-4xl md:text-5xl font-bold italic text-center text-brand-dark mb-4">
+      <div className="container mx-auto px-4 pt-8 md:pt-12 pb-16 md:pb-24">
+        <div className="flex flex-col gap-8 md:gap-14">
+         {/* 
+            DEĞİŞİKLİK BURADA: Başlık Konteyneri
+            - 'flex flex-col items-center' eklendi: Bu div'i bir flex konteynerine dönüştürür,
+              çocuklarını dikey olarak sıralar (flex-col) ve yatayda mükemmel bir şekilde ortalar (items-center).
+          */}
+          <div className="text-center flex flex-col items-center">
+            <h1 className="font-serif text-3xl md:text-4xl font-bold italic text-center text-brand-dark mb-2">
               Lezzet Menümüz
             </h1>
-            <p className="text-brand-muted max-w-2xl mx-auto">
+            
+            {/* 
+              DEĞİŞİKLİK BURADA: Açıklama Paragrafı
+              - 'mx-auto' kaldırıldı: Artık ortalamayı parent div yaptığı için bu class'a gerek yok.
+              - 'max-w-l' (hatalı kullanım) -> 'max-w-xl' (doğru kullanım) olarak düzeltildi:
+                Bu, paragrafın webde aşırı genişleyip okunmaz hale gelmesini engeller.
+            */}
+            <p className="text-brand-muted max-w-xl text-base">
               Usta ellerden çıkan, her biri özenle hazırlanan pide ve lahmacun çeşitlerimizi keşfedin.
             </p>
           </div>
-
+          
           <div className="flex justify-center">
-            <div className="flex flex-wrap justify-center items-center bg-brand-surface/60 p-1.5 rounded-full shadow-sm border border-brand-border/80 gap-2">
-              <button
+            <div className="flex flex-wrap justify-center items-center gap-2">
+              <CategoryButton 
+                label="Tümü"
+                isSelected={selectedCategory === 'all'}
                 onClick={(e) => handleCategoryClick(e, 'all')}
-                className={`px-6 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-red focus:ring-offset-2 focus:ring-offset-brand-background ${selectedCategory === 'all' ? 'bg-brand-red text-white shadow' : 'text-brand-dark hover:bg-brand-surface'}`}
-              >
-                Tümü
-              </button>
+              />
+              
               {categories.map((category) => (
-                <button
+                <CategoryButton
                   key={category.id}
+                  label={category.name}
+                  isSelected={selectedCategory === category.id}
                   onClick={(e) => handleCategoryClick(e, category.id)}
-                  className={`px-6 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-red focus:ring-offset-2 focus:ring-offset-brand-background ${selectedCategory === category.id ? 'bg-brand-red text-white shadow' : 'text-brand-dark hover:bg-brand-surface'}`}
-                >
-                  {category.name}
-                </button>
+                />
               ))}
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {filteredProducts.map((product) => (
-              <ProductCard 
-                key={product.id}
-                product={product}
-                onCardClick={() => handleProductClick(product)} 
-              />
-            ))}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedCategory} 
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {filteredProducts.map((product) => (
+                <motion.div key={product.id} variants={itemVariants}>
+                  <ProductCard 
+                    product={product}
+                    onCardClick={() => handleProductClick(product)} 
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
         
         {filteredProducts.length === 0 && !loading && (
           <p className="text-center text-brand-muted py-10 mt-10">Bu kategoride gösterilecek ürün bulunmamaktadır.</p>
         )}
 
-        {/* --- MODAL ARTIK TEK BİR TEMİZ BİLEŞEN --- */}
         <ProductDetailModal 
           isOpen={selectedProduct !== null}
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
         />
-        {/* --- REFACTORING SONU --- */}
       </div>
     </div>
   );

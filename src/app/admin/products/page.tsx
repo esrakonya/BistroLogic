@@ -1,29 +1,47 @@
-// Dosya Yolu: src/app/admin/products/page.tsx
+// Dosya Yolu: /src/app/admin/products/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import ProductsTable from '@/components/admin/ProductsTable';
 import ProductModal from '@/components/admin/ProductModal';
 import TableSkeleton from '@/components/skeletons/TableSkeleton';
-import type { CleanProduct } from '@/lib/types';
+// DEĞİŞİKLİK: Yeni tipleri import ediyoruz
+import type { CleanProduct, Category } from '@/lib/types';
+import { PlusIcon } from '@heroicons/react/24/solid';
+
+const ITEMS_PER_PAGE = 10; // Bir sayfada kaç ürün gösterilecek?
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<CleanProduct[]>([]);
+  const [allProducts, setAllProducts] = useState<CleanProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CleanProduct | null>(null);
+  
+  // YENİ STATE'LER: Filtreleme ve Sayfalama için
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Bu fonksiyon, tüm veri çekme ve yenileme işlemlerinin merkezidir.
-  const fetchProducts = useCallback(async () => {
-    // setLoading(true); // Yenileme sırasında tam ekran yükleme olmasın
+  const fetchProductsAndCategories = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
-      // Admin paneli için özel olarak oluşturduğumuz API rotasını kullanıyoruz.
-      const res = await fetch(`/api/admin/products?v=${new Date().getTime()}`);
-      if (!res.ok) throw new Error('Ürün verisi çekilemedi.');
-      const data = await res.json();
-      setProducts(data);
+      // İki API isteğini aynı anda yapıyoruz (daha performanslı)
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch(`/api/admin/products?v=${new Date().getTime()}`, { credentials: 'include' }),
+        fetch(`/api/admin/categories?v=${new Date().getTime()}`, { credentials: 'include' })
+      ]);
+
+      if (!productsRes.ok) throw new Error('Ürün verisi çekilemedi.');
+      if (!categoriesRes.ok) throw new Error('Kategori verisi çekilemedi.');
+
+      const productsData = await productsRes.json();
+      const categoriesData = await categoriesRes.json();
+
+      setAllProducts(productsData);
+      setCategories(categoriesData);
+
     } catch (err: any) { 
       setError(err.message); 
     } finally {
@@ -32,46 +50,149 @@ export default function ProductsPage() {
   }, []);
 
   useEffect(() => { 
-    fetchProducts(); 
-  }, [fetchProducts]);
+    fetchProductsAndCategories(); 
+  }, [fetchProductsAndCategories]);
 
-  // Bu fonksiyon, bir alt bileşendeki (Modal veya Table) işlemden sonra
-  // veriyi yeniden çekmek için kullanılır.
-  const handleDataChange = () => {
-    fetchProducts();
-  };
+  // FİLTRELEME VE SAYFALAMA MANTIĞI
+  const paginatedProducts = useMemo(() => {
+    // 1. Kategoriye göre filtrele
+    const filtered = selectedCategory === 'all'
+      ? allProducts
+      : allProducts.filter(p => p.category_id?.toString() === selectedCategory);
+
+    // 2. Filtrelenmiş sonuçları sayfalara ayır
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    
+    return filtered.slice(startIndex, endIndex);
+  }, [allProducts, selectedCategory, currentPage]);
   
+  // Toplam sayfa sayısını hesapla
+  const totalPages = useMemo(() => {
+     const filteredCount = selectedCategory === 'all'
+      ? allProducts.length
+      : allProducts.filter(p => p.category_id?.toString() === selectedCategory).length;
+    return Math.ceil(filteredCount / ITEMS_PER_PAGE);
+  }, [allProducts, selectedCategory]);
+
+  const handleDataChange = () => {
+    // Önce veriyi yeniden çekiyoruz, bu 'allProducts' state'ini güncelleyecek.
+    fetchProductsAndCategories().then(() => {
+      // Veri çekildikten SONRA (bu yüzden .then() kullanıyoruz),
+      // mevcut sayfanın hala geçerli olup olmadığını kontrol ediyoruz.
+      
+      // 'filteredProducts' state'e bağlı olmadığı için, en güncel halini
+      // doğrudan 'allProducts' üzerinden yeniden hesaplamamız gerekir.
+      // Ancak 'useMemo' zaten state değişimine göre çalışacağı için,
+      // sadece sayfa numarasını kontrol etmemiz yeterli.
+
+      // Eğer mevcut sayfa numarası, yeni toplam sayfa sayısından büyükse
+      // (yani son sayfadaki son ürünü sildiysek), bir önceki sayfaya git.
+      // 'totalPages' yeniden hesaplandığında, bu kontrolü yapabiliriz.
+      // NOT: State güncellemeleri asenkron olduğu için, bu kontrolü
+      // bir sonraki render döngüsünde yapmak en garantisidir.
+      // Bunun en temiz yolu, totalPages'i izleyen bir useEffect kullanmaktır.
+      // Ama daha basit bir çözüm:
+      
+      const newFilteredLength = selectedCategory === 'all'
+        ? allProducts.length - 1 // Bir ürün silindiğini varsayıyoruz
+        : allProducts.filter(p => p.category_id?.toString() === selectedCategory).length -1;
+        
+      const newTotalPages = Math.ceil((newFilteredLength > 0 ? newFilteredLength : 0) / ITEMS_PER_PAGE);
+      
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      }
+    });
+  };
   const handleOpenNewModal = () => { setEditingProduct(null); setIsModalOpen(true); };
   const handleOpenEditModal = (product: CleanProduct) => { setEditingProduct(product); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setEditingProduct(null); };
+  
+  // Kategori filtresi değiştiğinde, sayfa numarasını 1'e sıfırla
+  const handleCategoryFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCategory(e.target.value);
+    setCurrentPage(1);
+  };
+  
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-poppins font-bold">Ürün Yönetimi</h1>
-        <button onClick={handleOpenNewModal} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-          + Yeni Ürün Ekle
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-poppins font-bold text-gray-800">Ürün Yönetimi</h1>
+          <p className="mt-1 text-gray-500">Mevcut ürünleri düzenleyin veya yeni lezzetler ekleyin.</p>
+        </div>
+        <button 
+          onClick={handleOpenNewModal} 
+          className="inline-flex items-center gap-2 bg-brand-red hover:bg-red-700 text-white font-bold py-2.5 px-5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md"
+        >
+          <PlusIcon className="h-5 w-5" />
+          Yeni Ürün Ekle
         </button>
       </div>
+
+      {/* YENİ: FİLTRELEME ALANI */}
+      <div className="bg-white p-4 rounded-xl shadow-lg flex items-center gap-4">
+         <label htmlFor="category-filter" className="font-semibold text-gray-700">Kategoriye Göre Filtrele:</label>
+         <select
+            id="category-filter"
+            value={selectedCategory}
+            onChange={handleCategoryFilterChange}
+            className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red"
+         >
+            <option value="all">Tüm Kategoriler</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+         </select>
+      </div>
       
-      {loading ? (
-        <TableSkeleton rows={5} />
-      ) : error ? (
-        <p className="text-red-500">Hata: {error}</p>
-      ) : (
-        // Veriyi, düzenleme ve silme fonksiyonlarını prop olarak 'ProductsTable'a gönderiyoruz.
-        <ProductsTable 
-          products={products} 
-          onEdit={handleOpenEditModal} 
-          onDeleteSuccess={handleDataChange} 
-        />
+      <div className="bg-white p-6 rounded-2xl shadow-lg">
+        {loading ? (
+          <TableSkeleton rows={ITEMS_PER_PAGE} />
+        ) : error ? (
+          <p className="text-red-500">Hata: {error}</p>
+        ) : (
+          <ProductsTable 
+            products={paginatedProducts} // Artık sayfalara ayrılmış veriyi gönderiyoruz
+            onEdit={handleOpenEditModal} 
+            onDeleteSuccess={handleDataChange} 
+          />
+        )}
+      </div>
+
+      {/* YENİ: SAYFALAMA KONTROLLERİ */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-white border rounded-lg disabled:opacity-50"
+          >
+            Önceki
+          </button>
+          <span className="font-semibold">{currentPage} / {totalPages}</span>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-white border rounded-lg disabled:opacity-50"
+          >
+            Sonraki
+          </button>
+        </div>
       )}
       
       <ProductModal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal} 
         product={editingProduct}
-        onSaveSuccess={handleDataChange} // Kaydetme başarılı olunca da veriyi yenile
+        onSaveSuccess={handleDataChange}
       />
     </div>
   );

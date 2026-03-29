@@ -3,63 +3,63 @@ import { Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { getSiteContent } from "@/lib/data";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// Gövde metinleri için Poppins.
 const poppins = Poppins({
   subsets: ["latin"],
   display: 'swap',
+  weight: ['400', '500', '600', '700'],
   variable: '--font-poppins',
-  weight: ['400', '500', '600', '700']
 });
 
-// Başlıklar için, özellikle italik stilini kullanacağımız Playfair Display.
 const playfair = Playfair_Display({
   subsets: ["latin"],
   display: 'swap',
+  style: ['normal', 'italic'],
+  weight: ['400', '700'],
   variable: '--font-playfair',
-  style: ['normal', 'italic'] // İtalik stilini de yüklüyoruz.
 });
 
-// Sitemizin tarayıcı sekmesinde ve arama sonuçlarında görünecek bilgilerini güncelliyoruz
 export const metadata: Metadata = {
-  title: "Pide Efsanesi",
+  title: "Efsane Pide",
   description: "Şehrin en lezzetli pideleri!",
+  icons: {
+    icon: '/efsane-logo.png', 
+  },
 };
 
-// Bu, tüm sayfaları saran ana şablon bileşenidir
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    // Dil etiketini 'en' (İngilizce) yerine 'tr' (Türkçe) olarak değiştiriyoruz
-    // Tarayıcı eklentilerinden kaynaklanan hataları önlemek için suppressHydrationWarning ekliyoruz
-    <html lang="tr" suppressHydrationWarning>
-      
-      {/* 
-        <body> etiketini tamamen yeniden yapılandırıyoruz:
-        - Font değişkenlerini ve varsayılan fontu (font-lato) atıyoruz.
-        - `tailwind.config.js` dosyasında tanımladığımız özel arka plan (bg-brand-cream) ve metin (text-brand-dark) renklerini atıyoruz.
-        - "flex flex-col min-h-screen" sınıfları ile Footer'ın her zaman sayfanın en dibinde kalmasını sağlıyoruz (yapışkan footer).
-      */}
-      <body className={`${poppins.variable} ${playfair.variable} font-lato bg-brand-cream text-brand-dark flex flex-col min-h-screen`}>
-        
-        {/* Navbar bileşenimizi sayfanın en üstüne yerleştiriyoruz */}
-        <Navbar />
+  
+  const siteContentData = await getSiteContent();
+  const siteContentObject = (siteContentData && siteContentData.length > 0) ? siteContentData[0] : null;
 
-        {/* 
-          Her bir sayfanın kendi içeriği ("children") bu <main> etiketinin içinde gösterilecek.
-          "flex-grow" sınıfı, main alanının Navbar ve Footer arasındaki tüm boşluğu doldurmasını sağlar.
-          "container mx-auto px-4 py-8" ile içeriği ortalar ve kenarlardan boşluk bırakırız.
-        */}
-        <main className="flex-grow container mx-auto px-4 py-8">
+  return (
+    <html lang="tr" suppressHydrationWarning>
+      <body className={`${poppins.variable} ${playfair.variable} font-sans flex flex-col min-h-screen bg-brand-background text-brand-dark`}>
+        <Navbar />
+        <main className="flex-grow">
           {children}
         </main>
-
-        {/* Footer bileşenimizi sayfanın en altına yerleştiriyoruz */}
-        <Footer /> 
-
+        <Footer />
+        {/* YENİ: Toast bildirimlerinin görüneceği yer */}
+        <ToastContainer
+          position="bottom-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </body>
     </html>
   );

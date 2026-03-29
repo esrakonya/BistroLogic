@@ -1,35 +1,25 @@
-// Dosya Yolu: src/lib/data.ts
+// Dosya Yolu: /src/lib/data.ts
 
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { cache } from 'react';
+// DEĞİŞİKLİK 1: Yanlış tarif yerine, merkezi ve doğru olan tipi import ediyoruz.
+import type { SiteContent } from './types'; 
 
-// site_content tablosundaki bir satırın tipini tanımlıyoruz.
-export interface SiteContent {
-  id: number;
-  key: string;
-  value: string;
-  description: string;
-}
+// DEĞİŞİKLİK 2: Yanlış olan 'SiteContent' arayüzü buradan tamamen SİLİNDİ.
 
-// React'in 'cache' fonksiyonu, aynı render döngüsü içinde bu fonksiyonun
-// birden çok kez çağrılması durumunda veritabanına sadece bir kez gitmesini sağlar.
-// Bu bir performans optimizasyonudur.
+// site_content tablosundan tüm veriyi çeken ve önbellekleyen fonksiyon.
+// Fonksiyonun döndürdüğü verinin tipini, import ettiğimiz doğru tiple eşleştiriyoruz.
 export const getSiteContent = cache(async (): Promise<SiteContent[]> => {
-  const cookieStore = cookies();
-  // Sunucu tarafında, anonim de olsa bir istemci oluşturuyoruz.
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
-  
-  try {
-    // site_content tablosu için "herkese açık okuma" politikası yazmamız gerekecek.
-    const { data, error } = await supabase.from('site_content').select('*');
-    if (error) {
-      console.error("Site content fetch error:", error);
-      throw error;
-    }
-    return data || [];
-  } catch (error) {
-    console.error("Failed to fetch site content:", error);
+  const supabase = createServerComponentClient({ cookies });
+  const { data, error } = await supabase
+    .from('site_content')
+    .select('*'); // '*' ile tüm sütunları (id, key, value, description) çeker.
+
+  if (error) {
+    console.error('Error fetching site content:', error.message);
     return [];
   }
+
+  return data || [];
 });
