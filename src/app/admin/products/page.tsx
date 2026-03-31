@@ -5,11 +5,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import ProductsTable from '@/components/admin/ProductsTable';
 import ProductModal from '@/components/admin/ProductModal';
 import TableSkeleton from '@/components/skeletons/TableSkeleton';
-// DEĞİŞİKLİK: Yeni tipleri import ediyoruz
 import type { CleanProduct, Category } from '@/lib/types';
-import { PlusIcon } from '@heroicons/react/24/solid';
+import { 
+  PlusIcon, 
+  FunnelIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon,
+  ShoppingBagIcon 
+} from '@heroicons/react/24/outline';
 
-const ITEMS_PER_PAGE = 10; // Bir sayfada kaç ürün gösterilecek?
+const ITEMS_PER_PAGE = 8; 
 
 export default function ProductsPage() {
   const [allProducts, setAllProducts] = useState<CleanProduct[]>([]);
@@ -18,7 +23,6 @@ export default function ProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<CleanProduct | null>(null);
   
-  // YENİ STATE'LER: Filtreleme ve Sayfalama için
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,14 +31,13 @@ export default function ProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      // İki API isteğini aynı anda yapıyoruz (daha performanslı)
       const [productsRes, categoriesRes] = await Promise.all([
         fetch(`/api/admin/products?v=${new Date().getTime()}`, { credentials: 'include' }),
         fetch(`/api/admin/categories?v=${new Date().getTime()}`, { credentials: 'include' })
       ]);
 
-      if (!productsRes.ok) throw new Error('Ürün verisi çekilemedi.');
-      if (!categoriesRes.ok) throw new Error('Kategori verisi çekilemedi.');
+      if (!productsRes.ok) throw new Error('Failed to fetch products.');
+      if (!categoriesRes.ok) throw new Error('Failed to fetch categories.');
 
       const productsData = await productsRes.json();
       const categoriesData = await categoriesRes.json();
@@ -53,63 +56,27 @@ export default function ProductsPage() {
     fetchProductsAndCategories(); 
   }, [fetchProductsAndCategories]);
 
-  // FİLTRELEME VE SAYFALAMA MANTIĞI
-  const paginatedProducts = useMemo(() => {
-    // 1. Kategoriye göre filtrele
-    const filtered = selectedCategory === 'all'
+  const filteredProducts = useMemo(() => {
+    return selectedCategory === 'all'
       ? allProducts
       : allProducts.filter(p => p.category_id?.toString() === selectedCategory);
-
-    // 2. Filtrelenmiş sonuçları sayfalara ayır
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    
-    return filtered.slice(startIndex, endIndex);
-  }, [allProducts, selectedCategory, currentPage]);
-  
-  // Toplam sayfa sayısını hesapla
-  const totalPages = useMemo(() => {
-     const filteredCount = selectedCategory === 'all'
-      ? allProducts.length
-      : allProducts.filter(p => p.category_id?.toString() === selectedCategory).length;
-    return Math.ceil(filteredCount / ITEMS_PER_PAGE);
   }, [allProducts, selectedCategory]);
 
-  const handleDataChange = () => {
-    // Önce veriyi yeniden çekiyoruz, bu 'allProducts' state'ini güncelleyecek.
-    fetchProductsAndCategories().then(() => {
-      // Veri çekildikten SONRA (bu yüzden .then() kullanıyoruz),
-      // mevcut sayfanın hala geçerli olup olmadığını kontrol ediyoruz.
-      
-      // 'filteredProducts' state'e bağlı olmadığı için, en güncel halini
-      // doğrudan 'allProducts' üzerinden yeniden hesaplamamız gerekir.
-      // Ancak 'useMemo' zaten state değişimine göre çalışacağı için,
-      // sadece sayfa numarasını kontrol etmemiz yeterli.
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
 
-      // Eğer mevcut sayfa numarası, yeni toplam sayfa sayısından büyükse
-      // (yani son sayfadaki son ürünü sildiysek), bir önceki sayfaya git.
-      // 'totalPages' yeniden hesaplandığında, bu kontrolü yapabiliriz.
-      // NOT: State güncellemeleri asenkron olduğu için, bu kontrolü
-      // bir sonraki render döngüsünde yapmak en garantisidir.
-      // Bunun en temiz yolu, totalPages'i izleyen bir useEffect kullanmaktır.
-      // Ama daha basit bir çözüm:
-      
-      const newFilteredLength = selectedCategory === 'all'
-        ? allProducts.length - 1 // Bir ürün silindiğini varsayıyoruz
-        : allProducts.filter(p => p.category_id?.toString() === selectedCategory).length -1;
-        
-      const newTotalPages = Math.ceil((newFilteredLength > 0 ? newFilteredLength : 0) / ITEMS_PER_PAGE);
-      
-      if (currentPage > newTotalPages && newTotalPages > 0) {
-        setCurrentPage(newTotalPages);
-      }
-    });
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredProducts, currentPage]);
+
+  const handleDataChange = () => {
+    fetchProductsAndCategories();
   };
+
   const handleOpenNewModal = () => { setEditingProduct(null); setIsModalOpen(true); };
   const handleOpenEditModal = (product: CleanProduct) => { setEditingProduct(product); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setEditingProduct(null); };
   
-  // Kategori filtresi değiştiğinde, sayfa numarasını 1'e sıfırla
   const handleCategoryFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedCategory(e.target.value);
     setCurrentPage(1);
@@ -117,73 +84,93 @@ export default function ProductsPage() {
   
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setCurrentPage(page);
     }
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-poppins font-bold text-gray-800">Ürün Yönetimi</h1>
-          <p className="mt-1 text-gray-500">Mevcut ürünleri düzenleyin veya yeni lezzetler ekleyin.</p>
+    <main className="max-w-[1200px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      
+      {/* --- HEADER SECTION --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-neutral-100 pb-8">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-neutral-400">
+            <ShoppingBagIcon className="h-5 w-5" />
+            <span className="text-xs font-bold uppercase tracking-[0.2em]">Inventory</span>
+          </div>
+          <h1 className="text-4xl font-serif font-bold text-neutral-900 text-shadow-sm">Products Management</h1>
+          <p className="text-neutral-500 font-light text-lg">Create, edit and organize your gourmet menu items.</p>
         </div>
+
         <button 
           onClick={handleOpenNewModal} 
-          className="inline-flex items-center gap-2 bg-brand-red hover:bg-red-700 text-white font-bold py-2.5 px-5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md"
+          className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-4 px-8 rounded-full transition-all shadow-xl active:scale-95"
         >
-          <PlusIcon className="h-5 w-5" />
-          Yeni Ürün Ekle
+          <PlusIcon className="h-5 w-5 stroke-2" />
+          Add New Product
         </button>
       </div>
 
-      {/* YENİ: FİLTRELEME ALANI */}
-      <div className="bg-white p-4 rounded-xl shadow-lg flex items-center gap-4">
-         <label htmlFor="category-filter" className="font-semibold text-gray-700">Kategoriye Göre Filtrele:</label>
-         <select
-            id="category-filter"
-            value={selectedCategory}
-            onChange={handleCategoryFilterChange}
-            className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red"
-         >
-            <option value="all">Tüm Kategoriler</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-         </select>
+      {/* --- TOOLBAR: FILTERING --- */}
+      <div className="bg-white p-2 rounded-2xl border border-neutral-100 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+         <div className="flex items-center gap-3 px-4 py-2 bg-neutral-50 rounded-xl w-full sm:w-auto">
+            <FunnelIcon className="h-4 w-4 text-neutral-400" />
+            <span className="text-sm font-semibold text-neutral-600 whitespace-nowrap">Filter:</span>
+            <select
+               value={selectedCategory}
+               onChange={handleCategoryFilterChange}
+               className="bg-transparent text-sm font-bold text-neutral-900 focus:outline-none cursor-pointer min-w-[150px]"
+            >
+               <option value="all">All Categories</option>
+               {categories.map(cat => (
+                 <option key={cat.id} value={cat.id}>{cat.name}</option>
+               ))}
+            </select>
+         </div>
+         <div className="ml-auto px-4 text-sm text-neutral-400 font-medium">
+            Showing <span className="text-neutral-900">{filteredProducts.length}</span> products
+         </div>
       </div>
       
-      <div className="bg-white p-6 rounded-2xl shadow-lg">
+      {/* --- TABLE SECTION --- */}
+      <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm overflow-hidden min-h-[400px]">
         {loading ? (
-          <TableSkeleton rows={ITEMS_PER_PAGE} />
+          <div className="p-8"><TableSkeleton rows={ITEMS_PER_PAGE} /></div>
         ) : error ? (
-          <p className="text-red-500">Hata: {error}</p>
+          <div className="py-20 text-center text-red-500 font-medium">{error}</div>
         ) : (
           <ProductsTable 
-            products={paginatedProducts} // Artık sayfalara ayrılmış veriyi gönderiyoruz
+            products={paginatedProducts} 
             onEdit={handleOpenEditModal} 
             onDeleteSuccess={handleDataChange} 
           />
         )}
       </div>
 
-      {/* YENİ: SAYFALAMA KONTROLLERİ */}
+      {/* --- MODERN PAGINATION --- */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
+        <div className="flex justify-center items-center gap-6 pt-4 pb-10">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-4 py-2 bg-white border rounded-lg disabled:opacity-50"
+            className="p-3 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-30 disabled:hover:bg-white transition-all shadow-sm"
           >
-            Önceki
+            <ChevronLeftIcon className="h-5 w-5 text-neutral-900" />
           </button>
-          <span className="font-semibold">{currentPage} / {totalPages}</span>
+          
+          <div className="flex items-center gap-2">
+             <span className="text-sm font-bold text-neutral-900">Page</span>
+             <span className="bg-neutral-900 text-white px-3 py-1 rounded-md text-sm font-mono">{currentPage}</span>
+             <span className="text-sm font-bold text-neutral-400">of {totalPages}</span>
+          </div>
+
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 bg-white border rounded-lg disabled:opacity-50"
+            className="p-3 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 disabled:opacity-30 disabled:hover:bg-white transition-all shadow-sm"
           >
-            Sonraki
+            <ChevronRightIcon className="h-5 w-5 text-neutral-900" />
           </button>
         </div>
       )}
@@ -194,6 +181,6 @@ export default function ProductsPage() {
         product={editingProduct}
         onSaveSuccess={handleDataChange}
       />
-    </div>
+    </main>
   );
 }

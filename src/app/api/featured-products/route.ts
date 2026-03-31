@@ -3,26 +3,48 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-// Bu rota, admin panelinde bir ürün "öne çıkarılan" olarak işaretlendiğinde
-// anında güncellenmesi için dinamik olmalıdır.
+/**
+ * Force dynamic rendering to ensure that when an admin marks a product 
+ * as "featured", it appears on the landing page immediately.
+ */
 export const dynamic = 'force-dynamic';
 
+/**
+ * Public API to fetch the "Handpicked" selection for the landing page.
+ * Returns products marked as 'is_featured' and currently 'is_available'.
+ */
 export async function GET() {
-  // Müşteri tarafı olduğu için anonim anahtarı kullanır ve RLS kurallarına uyar.
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any });
 
   try {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
-      .eq('is_featured', true) // Sadece 'is_featured' değeri true olanları getir.
-      .limit(8); // Ana sayfada en fazla 8 tane gösterelim.
+      .select('*, categories(name)') // Fetching category metadata for the UI badges
+      .eq('is_featured', true) 
+      .eq('is_available', true) // Essential: Don't feature out-of-stock items
+      .limit(8)
+      .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error("[Featured Products API Error]:", error);
+      return NextResponse.json({ error: 'Failed to load featured selection.' }, { status: 500 });
+    }
 
-    return NextResponse.json(data);
+    /**
+     * Data Cleaning: Flattening the category object for easier 
+     * consumption by the frontend components.
+     */
+    const formattedData = data.map(product => ({
+      ...product,
+      categoryName: product.categories?.name || 'Gourmet',
+      categories: undefined // Remove the nested object
+    }));
+
+    return NextResponse.json(formattedData);
     
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: any) {
+    console.error("[Fatal Featured API Error]:", err);
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }

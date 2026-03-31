@@ -3,23 +3,28 @@
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { cache } from 'react';
-// DEĞİŞİKLİK 1: Yanlış tarif yerine, merkezi ve doğru olan tipi import ediyoruz.
 import type { SiteContent } from './types'; 
 
-// DEĞİŞİKLİK 2: Yanlış olan 'SiteContent' arayüzü buradan tamamen SİLİNDİ.
-
-// site_content tablosundan tüm veriyi çeken ve önbellekleyen fonksiyon.
-// Fonksiyonun döndürdüğü verinin tipini, import ettiğimiz doğru tiple eşleştiriyoruz.
+/**
+ * Fetches all global site configuration from the 'site_content' table.
+ * Wrapped in React 'cache' to ensure Request Memoization.
+ * This prevents redundant database queries during a single render cycle.
+ */
 export const getSiteContent = cache(async (): Promise<SiteContent[]> => {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore as any });
+  
   const { data, error } = await supabase
     .from('site_content')
-    .select('*'); // '*' ile tüm sütunları (id, key, value, description) çeker.
+    .select('*')
+    // Senior Touch: Always order your metadata for a predictable UI experience
+    .order('id', { ascending: true });
 
   if (error) {
-    console.error('Error fetching site content:', error.message);
+    // Professional error logging with context
+    console.error('[Data Fetch Error - SiteContent]:', error.message);
     return [];
   }
 
-  return data || [];
+  return (data as SiteContent[]) || [];
 });

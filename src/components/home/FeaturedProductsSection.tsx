@@ -1,36 +1,35 @@
 // Dosya Yolu: /src/components/home/FeaturedProductsSection.tsx
-'use client'; // Veriyi useEffect ile çekeceğimiz için bu bir istemci bileşeni olmalı.
+'use client';
 
 import { useState, useEffect } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
+import { motion } from 'framer-motion';
 import ProductCard from '@/components/menu/ProductCard';
-import type { CleanProduct } from '@/lib/types'; // Product tipimizi import edelim.
-import TableSkeleton from '../skeletons/TableSkeleton'; // Yükleme animasyonu için
+import type { CleanProduct } from '@/lib/types';
+import { SparklesIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 export default function FeaturedProductsSection() {
   const [emblaRef] = useEmblaCarousel({
     align: 'start',
     containScroll: 'trimSnaps',
+    dragFree: true,
     loop: false,
   });
 
-  // DEĞİŞİKLİK: Sahte veri yerine state'leri kullanıyoruz.
   const [products, setProducts] = useState<CleanProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
-  // DEĞİŞİKLİK: Veriyi API'den çekmek için useEffect kullanıyoruz.
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
         setLoading(true);
         const res = await fetch(`/api/featured-products?v=${new Date().getTime()}`);
-        if (!res.ok) throw new Error("Veri çekilemedi");
+        if (!res.ok) throw new Error("Connection lost");
         const data = await res.json();
         setProducts(data);
       } catch (error) {
-        console.error("Öne çıkan ürünler çekilirken hata:", error);
-        // Hata durumunda boş bir dizi atayarak bölümün gizlenmesini sağlayabiliriz.
+        console.error("[Featured API Error]:", error);
         setProducts([]);
       } finally {
         setLoading(false);
@@ -40,56 +39,74 @@ export default function FeaturedProductsSection() {
     fetchFeaturedProducts();
   }, []);
 
-  const handleProductClick = (product: CleanProduct) => {
-    setSelectedProductId(prevId => prevId === product.id ? null : product.id);
-  };
-  
-  // Eğer yükleniyorsa bir iskelet gösterelim.
   if (loading) {
     return (
-       <section className="bg-brand-background py-16 md:py-24">
-         <div className="mx-auto">
-           {/* Başlıkları da gösterebiliriz ki kullanıcı neyin yüklendiğini anlasın */}
-            <div className="text-center mb-12 px-4">
-              <h2 className="font-serif text-3xl md:text-4xl font-bold italic text-brand-dark">En Sevilenlerimiz</h2>
-              <p className="mt-3 text-lg text-brand-muted max-w-xl mx-auto">Müşterilerimizin favorisi olan bu lezzetleri denemeden geçmeyin.</p>
-            </div>
-            <TableSkeleton rows={1} /> {/* Basit bir yükleme göstergesi */}
-         </div>
-       </section>
-    )
+      <section className="bg-white py-24">
+        <div className="container mx-auto px-4">
+           <div className="h-10 w-48 bg-neutral-100 rounded-full animate-pulse mb-4 mx-auto" />
+           <div className="h-6 w-96 bg-neutral-50 rounded-full animate-pulse mb-12 mx-auto" />
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => <div key={i} className="h-80 bg-neutral-100 rounded-[2rem] animate-pulse" />)}
+           </div>
+        </div>
+      </section>
+    );
   }
 
-  // Eğer hiç öne çıkan ürün yoksa veya bir hata oluştuysa, bu bölümü hiç gösterme.
-  if (!products || products.length === 0) {
-    return null;
-  }
+  if (!products || products.length === 0) return null;
 
   return (
-    <section className="bg-brand-background py-16 md:py-24">
-      <div className="container mx-auto">
-        {/* Başlık Bölümü */}
-        <div className="text-center mb-12 px-4">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold italic text-brand-dark">
-            En Sevilenlerimiz
-          </h2>
-          <p className="mt-3 text-lg text-brand-muted max-w-xl mx-auto">
-            Müşterilerimizin favorisi olan bu lezzetleri denemeden geçmeyin.
-          </p>
-        </div>
+    <section className="bg-white py-24 md:py-32 overflow-hidden">
+      <div className="container mx-auto px-4">
         
-        {/* Embla Carousel Slider */}
-        <div className="overflow-hidden py-4" ref={emblaRef}>
-          <div className="flex -ml-4 px-4">
-            {products.map((product) => (
-              <div key={product.id} className="flex-shrink-0 flex-grow-0 basis-4/5 sm:basis-1/2 lg:basis-1/3 pl-4">
-                <ProductCard
-                  product={product}
-                  onCardClick={() => handleProductClick(product)}
-                  isSelected={product.id === selectedProductId}
-                />
-              </div>
-            ))}
+        {/* --- HEADER --- */}
+        <header className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+          <div className="space-y-4 max-w-2xl">
+            <div className="flex items-center gap-2 text-neutral-400">
+              <SparklesIcon className="h-5 w-5 text-yellow-500" />
+              <span className="text-xs font-bold uppercase tracking-[0.3em]">Exclusive Selection</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-serif font-bold text-neutral-900 tracking-tight">
+              The Handpicked <br/> Collection
+            </h2>
+            <p className="text-neutral-500 text-lg font-light leading-relaxed">
+              Explore our most celebrated culinary creations, curated by our chefs for a memorable dining journey.
+            </p>
+          </div>
+          
+          <Link href="/menu" className="group flex items-center gap-2 text-neutral-900 font-bold uppercase tracking-widest text-xs border-b-2 border-neutral-900 pb-2 transition-all hover:gap-4">
+            View Full Menu
+            <ChevronRightIcon className="h-4 w-4 stroke-2" />
+          </Link>
+        </header>
+        
+        {/* --- CAROUSEL --- */}
+        <div className="relative">
+          <div className="overflow-visible" ref={emblaRef}>
+            <div className="flex -ml-8">
+              {products.map((product) => (
+                <div key={product.id} className="flex-shrink-0 flex-grow-0 basis-full sm:basis-1/2 lg:basis-1/3 pl-8">
+                  <motion.div
+                    whileHover={{ y: -10 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <ProductCard
+                      product={product}
+                      onCardClick={() => {}} // Ana sayfada sadece sergiliyoruz
+                    />
+                  </motion.div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Drag Hint: Kullanıcıya kaydırılabilir olduğunu hissettirir */}
+          <div className="mt-12 flex justify-center lg:hidden">
+             <div className="flex items-center gap-2 text-neutral-300">
+                <div className="w-10 h-[1px] bg-neutral-200"></div>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Swipe to Explore</span>
+                <div className="w-10 h-[1px] bg-neutral-200"></div>
+             </div>
           </div>
         </div>
       </div>

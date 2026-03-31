@@ -2,11 +2,17 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { FaInstagram, FaFacebook, FaTwitter } from 'react-icons/fa'; // Facebook ve Twitter ikonları, linkler eklenirse diye kalabilir.
+import { FaInstagram, FaFacebook, FaTwitter } from 'react-icons/fa';
+import { Squares2X2Icon } from '@heroicons/react/24/outline';
 
 const SocialLink = ({ href, icon: Icon }: { href: string; icon: React.ElementType }) => (
-  <a href={href} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
-    <Icon className="h-6 w-6" />
+  <a 
+    href={href} 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:bg-white hover:text-black transition-all duration-500 shadow-xl"
+  >
+    <Icon className="h-5 w-5" />
   </a>
 );
 
@@ -15,77 +21,90 @@ const getContentValue = (contents: any[], key: string) => {
 };
 
 export default async function Footer() {
-  const supabase = createServerComponentClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore as any });
 
   const { data: contents, error } = await supabase.from('site_content').select('key, value');
   
   if (error) {
-    console.error("Footer için site içeriği çekilemedi:", error);
-    return <footer className="bg-brand-dark text-white p-4 text-center">Footer yüklenemedi.</footer>;
+    console.error("[Footer Error]:", error);
+    return null; // Sessiz hata yönetimi profesyonel bir yaklaşımdır
   }
   
   const safeContents = contents || [];
-  
-  // DEĞİŞİKLİK: Değişken adlarını ve key'leri sizin veritabanınızdakiyle eşleştirdim.
   const slogan = getContentValue(safeContents, 'footer_slogan');
   const phoneNumber = getContentValue(safeContents, 'phone_number');
   const address = getContentValue(safeContents, 'address_text');
   const instagramUrl = getContentValue(safeContents, 'social_instagram');
-  // Facebook ve Twitter sizde olmadığı için, bu değişkenler boş dönecek ve ikonlar görünmeyecek.
-  const facebookUrl = getContentValue(safeContents, 'social_facebook');
-  const twitterUrl = getContentValue(safeContents, 'social_twitter');
-  
+
   return (
-    <footer className="bg-brand-dark text-white font-sans py-10 md:py-14">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center sm:text-left">
+    <footer className="bg-neutral-950 text-white font-sans pt-20 pb-10 border-t border-white/5">
+      <div className="max-w-7xl mx-auto px-6">
+        
+        {/* --- MAIN GRID --- */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-16 md:gap-8 pb-16 border-b border-white/5">
           
-          {/* Sütun 1: Logo ve Slogan */}
-          <div className="flex flex-col items-center sm:items-start">
-            <Link href="/" className="text-white font-poppins font-bold text-2xl tracking-wider">
-              EFSANE<span className="text-brand-yellow">PİDE</span>
+          {/* Column 1: Identity (Col 5) */}
+          <div className="md:col-span-5 space-y-8">
+            <Link href="/" className="group flex items-center gap-3 w-fit">
+              <div className="bg-white p-1.5 rounded-lg group-hover:scale-110 transition-transform">
+                <Squares2X2Icon className="h-6 w-6 text-black stroke-2" />
+              </div>
+              <span className="text-white font-serif font-bold text-3xl tracking-tighter">
+                Servely
+              </span>
             </Link>
-            <p className="mt-4 text-gray-400 text-sm max-w-xs">{slogan}</p>
+            <p className="text-neutral-500 text-lg font-light leading-relaxed max-w-sm">
+              {slogan || "Experience the art of modern dining management through our scalable gourmet ecosystem."}
+            </p>
           </div>
 
-          {/* Sütun 2: Hızlı Menü */}
-          <div>
-            <h3 className="font-bold uppercase tracking-wider text-gray-300">Hızlı Menü</h3>
-            <div className="mt-4 flex flex-col space-y-2">
-              <Link href="/" className="text-gray-400 hover:text-white transition-colors">Ana Sayfa</Link>
-              <Link href="/menu" className="text-gray-400 hover:text-white transition-colors">Menü</Link>
-              {/* <Link href="/about" className="text-gray-400 hover:text-white transition-colors">Hakkımızda</Link> */}
-              <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">İletişim</Link>
-            </div>
+          {/* Column 2: Explore (Col 2) */}
+          <div className="md:col-span-2 space-y-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">Explore</h3>
+            <ul className="flex flex-col space-y-4">
+              <li><Link href="/" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Home</Link></li>
+              <li><Link href="/menu" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Menu</Link></li>
+              <li><Link href="/about" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">About Us</Link></li>
+              <li><Link href="/contact" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Contact</Link></li>
+            </ul>
           </div>
 
-          {/* Sütun 3: İletişim Bilgileri */}
-          <div>
-            <h3 className="font-bold uppercase tracking-wider text-gray-300">İletişim</h3>
-            <div className="mt-4 flex flex-col space-y-2 text-gray-400">
-              {/* DEĞİŞİKLİK: 'phoneNumber' ve 'address' değişkenleri kullanılıyor */}
-              {phoneNumber && <a href={`tel:${phoneNumber}`} className="hover:text-white">{phoneNumber}</a>}
-              {address && <p>{address}</p>}
+          {/* Column 3: Reach Us (Col 3) */}
+          <div className="md:col-span-3 space-y-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">Reach Us</h3>
+            <div className="flex flex-col space-y-4 text-sm font-light text-neutral-400">
+              {phoneNumber && (
+                <a href={`tel:${phoneNumber}`} className="hover:text-white transition-colors underline underline-offset-8 decoration-neutral-800 hover:decoration-white">
+                  {phoneNumber}
+                </a>
+              )}
+              {address && <p className="leading-relaxed">{address}</p>}
             </div>
           </div>
           
-          {/* Sütun 4: Sosyal Medya */}
-          <div>
-            <h3 className="font-bold uppercase tracking-wider text-gray-300">Bizi Takip Edin</h3>
-            <div className="mt-4 flex justify-center sm:justify-start space-x-5">
-              {/* DEĞİŞİKLİK: Sadece 'instagramUrl' kullanılıyor */}
+          {/* Column 4: Connect (Col 2) */}
+          <div className="md:col-span-2 space-y-6">
+            <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">Connect</h3>
+            <div className="flex gap-4">
               {instagramUrl && <SocialLink href={instagramUrl} icon={FaInstagram} />}
-              {/* Facebook ve Twitter URL'leri boş döneceği için bu linkler render edilmeyecek */}
-              {facebookUrl && <SocialLink href={facebookUrl} icon={FaFacebook} />}
-              {twitterUrl && <SocialLink href={twitterUrl} icon={FaTwitter} />}
+              {/* Fallback social placeholders if needed */}
+              <SocialLink href="#" icon={FaTwitter} />
             </div>
           </div>
 
         </div>
 
-        {/* Telif Hakkı Kısmı */}
-        <div className="mt-10 pt-8 border-t border-gray-700 text-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Pide Efsanesi. Tüm Hakları Saklıdır.</p>
+        {/* --- BOTTOM BAR --- */}
+        <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-neutral-600">
+            &copy; {new Date().getFullYear()} Servely Platform. Crafted for Excellence.
+          </p>
+          
+          <div className="flex items-center gap-8">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-700 cursor-help hover:text-neutral-400 transition-colors">Privacy Policy</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-700 cursor-help hover:text-neutral-400 transition-colors">Terms of Service</span>
+          </div>
         </div>
       </div>
     </footer>

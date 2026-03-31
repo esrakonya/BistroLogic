@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
+import { CheckCircleIcon, XCircleIcon, DocumentTextIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Transition } from '@headlessui/react';
-import TableSkeleton from '@/components/skeletons/TableSkeleton'; // Skeleton'ı da import edelim
+import TableSkeleton from '@/components/skeletons/TableSkeleton';
 
 interface SiteContent {
   id: number;
@@ -24,7 +24,6 @@ export default function ContentPage() {
     setLoading(true);
     setError(null);
     try {
-      // DEĞİŞİKLİK: Kimlik doğrulama için 'credentials: include' eklendi.
       const res = await fetch('/api/admin/content', { 
         cache: 'no-store',
         credentials: 'include' 
@@ -32,7 +31,7 @@ export default function ContentPage() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'İçerik verisi alınamadı.');
+        throw new Error(errorData.error || 'Failed to load content data.');
       }
       const data = await res.json();
       setContents(data);
@@ -57,7 +56,6 @@ export default function ContentPage() {
     setSuccess(null);
     setIsSubmitting(true);
 
-    // DEĞİŞİKLİK: Kimlik doğrulama için 'credentials: include' eklendi.
     const res = await fetch('/api/admin/content', {
       method: 'PUT',
       credentials: 'include',
@@ -68,24 +66,23 @@ export default function ContentPage() {
     setIsSubmitting(false);
 
     if (res.ok) {
-      setSuccess('Değişiklikler başarıyla kaydedildi!');
+      setSuccess('All changes saved successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } else {
       const data = await res.json();
-      setError(data.error || 'Bir hata oluştu.');
+      setError(data.error || 'An error occurred while saving.');
       setTimeout(() => setError(null), 5000);
     }
   };
 
-  // Yükleme durumu için daha iyi bir iskelet gösterimi
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-poppins font-bold text-gray-800">Site İçerik Yönetimi</h1>
-          <p className="mt-1 text-gray-500">Web sitesinde görünen metinleri ve bilgileri buradan güncelleyin.</p>
+      <div className="max-w-[1000px] mx-auto space-y-10">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-serif font-bold text-neutral-900 uppercase tracking-tight">Content Management</h1>
+          <div className="h-1 w-20 bg-neutral-200"></div>
         </div>
-        <div className="bg-white p-8 rounded-2xl shadow-lg">
+        <div className="bg-white p-8 rounded-3xl border border-neutral-100 shadow-sm">
           <TableSkeleton rows={5} />
         </div>
       </div>
@@ -93,90 +90,85 @@ export default function ContentPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-poppins font-bold text-gray-800">Site İçerik Yönetimi</h1>
-        <p className="mt-1 text-gray-500">Web sitesinde görünen metinleri ve bilgileri buradan güncelleyin.</p>
-      </div>
+    <main className="max-w-[1000px] mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      <div className="fixed top-5 right-5 z-50 w-80">
-        <Transition
-          show={!!success}
-          as={Fragment}
-          enter="transform ease-out duration-300 transition"
-          enterFrom="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-          enterTo="translate-y-0 opacity-100 sm:translate-x-0"
-          leave="transition ease-in duration-100"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="p-4 bg-green-500 text-white rounded-lg shadow-lg flex items-center gap-3">
-            <CheckCircleIcon className="h-6 w-6"/>
-            <p className="font-semibold">{success}</p>
+      {/* --- NOTIFICATIONS --- */}
+      <div className="fixed top-10 right-10 z-50 w-full max-w-sm px-4">
+        <Transition show={!!success} as={Fragment} enter="transform ease-out duration-300 transition" enterFrom="translate-y-2 opacity-0 sm:translate-x-4" enterTo="translate-y-0 opacity-100 sm:translate-x-0" leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <div className="p-4 bg-neutral-900 text-white rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10">
+            <CheckCircleIcon className="h-6 w-6 text-green-400"/>
+            <p className="text-sm font-medium">{success}</p>
           </div>
         </Transition>
-        <Transition
-          show={!!error}
-          as={Fragment}
-          enter="transform ease-out duration-300 transition"
-          enterFrom="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-          enterTo="translate-y-0 opacity-100 sm:translate-x-0"
-          leave="transition ease-in duration-100"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="p-4 bg-red-500 text-white rounded-lg shadow-lg flex items-center gap-3">
-            <XCircleIcon className="h-6 w-6"/>
-            <p className="font-semibold">{error}</p>
-          </div>
-        </Transition>
-      </div>
-      
-      {/* Hata mesajını formun üstünde göstermek daha iyi olabilir. */}
-      {error && !success && (
-         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
-           <p className="font-bold">Bir Hata Oluştu</p>
-           <p>{error}</p>
-         </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-lg space-y-8">
-        {contents.map(content => (
-          <div key={content.key}>
-            <label htmlFor={content.key} className="block text-gray-800 font-semibold mb-2">
-              {content.description || content.key}
-            </label>
-            {/* Form alanlarının 'textarea' veya 'input' olup olmadığına karar veren mantık */}
-            {content.value.length > 50 || content.value.includes('\n') || content.key.includes('text') || content.key.includes('address') ? (
-              <textarea
-                id={content.key}
-                value={content.value}
-                onChange={e => handleInputChange(content.key, e.target.value)}
-                rows={4}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red transition"
-              />
-            ) : (
-              <input
-                type="text"
-                id={content.key}
-                value={content.value}
-                onChange={e => handleInputChange(content.key, e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-red transition"
-              />
-            )}
-          </div>
-        ))}
         
-        <div>
+        <Transition show={!!error} as={Fragment} enter="transform ease-out duration-300 transition" enterFrom="translate-y-2 opacity-0 sm:translate-x-4" enterTo="translate-y-0 opacity-100 sm:translate-x-0" leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+          <div className="p-4 bg-red-600 text-white rounded-2xl shadow-2xl flex items-center gap-4">
+            <XCircleIcon className="h-6 w-6"/>
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        </Transition>
+      </div>
+
+      {/* --- HEADER --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-neutral-200 pb-8">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-neutral-400 uppercase tracking-widest text-xs font-bold">
+            <DocumentTextIcon className="h-4 w-4" />
+            System Configuration
+          </div>
+          <h1 className="text-4xl font-serif font-bold text-neutral-900">Site Content</h1>
+          <p className="text-neutral-500 font-light">Update your restaurant information, slogans, and public content.</p>
+        </div>
+      </div>
+
+      {/* --- FORM SECTION --- */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 bg-white p-8 md:p-12 rounded-3xl border border-neutral-100 shadow-sm">
+          {contents.map(content => (
+            <div key={content.key} className="group space-y-2">
+              <label htmlFor={content.key} className="text-xs font-bold text-neutral-400 uppercase tracking-widest px-1">
+                {content.description || content.key.replace(/_/g, ' ')}
+              </label>
+              
+              {content.value.length > 60 || content.key.includes('text') || content.key.includes('address') ? (
+                <textarea
+                  id={content.key}
+                  value={content.value}
+                  onChange={e => handleInputChange(content.key, e.target.value)}
+                  rows={4}
+                  className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all text-neutral-800 leading-relaxed"
+                />
+              ) : (
+                <input
+                  type="text"
+                  id={content.key}
+                  value={content.value}
+                  onChange={e => handleInputChange(content.key, e.target.value)}
+                  className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all text-neutral-800"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {/* --- ACTION BUTTON --- */}
+        <div className="flex justify-end pt-4">
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="bg-brand-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex items-center gap-3 bg-neutral-900 hover:bg-neutral-800 disabled:bg-neutral-300 text-white font-bold py-4 px-12 rounded-full transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl shadow-neutral-200"
           >
-            {isSubmitting ? 'Kaydediliyor...' : 'Tüm Değişiklikleri Kaydet'}
+            {isSubmitting ? (
+              <>
+                <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              'Save All Changes'
+            )}
           </button>
         </div>
       </form>
-    </div>
+    </main>
   );
 }

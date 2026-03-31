@@ -1,96 +1,140 @@
 // Dosya Yolu: src/components/Navbar.tsx
-
 'use client'; 
 
 import Link from 'next/link';
 import { useState, useEffect, Fragment } from 'react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/solid';
+import { Bars3Icon, XMarkIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import { Transition } from '@headlessui/react';
+import { usePathname } from 'next/navigation';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
 
+  // Sayfa kaydırıldığında Navbar'ın arka planını değiştiren efekt
   useEffect(() => {
-    setIsMounted(true);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // DEĞİŞİKLİK 1: Mobil Navbar yüksekliği azaltıldı.
-  // Bu placeholder, sayfanın zıplamasını (Layout Shift) engellerken mobil yüksekliğe uyum sağlar.
-  if (!isMounted) {
-    return <div className="h-16 bg-brand-red" />;
-  }
+  const navLinks = [
+    { name: 'Home', href: '/' },
+    { name: 'Menu', href: '/menu' },
+    { name: 'About Us', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+  ];
 
   return (
-    <nav className="bg-brand-red sticky top-0 z-50 shadow-md">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* DEĞİŞİKLİK 2: Navbar Yüksekliği */}
-        {/* Mobil için h-16 (64px), orta ekran (md) ve sonrası için h-20 (80px) */}
-        <div className="flex items-center justify-between h-16 md:h-20">
+    <nav 
+      className={`fixed top-0 w-full z-[100] transition-all duration-500 ${
+        isScrolled 
+          ? 'bg-white/80 backdrop-blur-xl border-b border-neutral-100 py-3 shadow-sm' 
+          : 'bg-transparent py-5'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex items-center justify-between">
           
+          {/* --- BRANDING / LOGO --- */}
           <div className="flex-shrink-0">
             <Link 
               href="/" 
-              // DEĞİŞİKLİK 3: Logo Boyutu
-              // Mobil için text-xl (daha küçük), orta ekran (md) ve sonrası için text-2xl
-              className="text-white font-poppins font-bold text-xl md:text-2xl tracking-wider"
-              onClick={() => { if (isOpen) setIsOpen(false); }}
+              className="group flex items-center gap-2.5 transition-all"
+              onClick={() => setIsOpen(false)}
             >
-              EFSANE<span className="text-white">PİDE</span>
+              <div className={`p-1.5 rounded-lg transition-all duration-300 ${isScrolled ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-900 shadow-xl'}`}>
+                <Squares2X2Icon className="h-6 w-6 stroke-2" />
+              </div>
+              <span className={`text-2xl font-serif font-bold tracking-tighter transition-colors duration-300 ${isScrolled ? 'text-neutral-900' : 'text-white drop-shadow-md'}`}>
+                Servely
+              </span>
             </Link>
           </div>
 
-          {/* Masaüstü Menüsü (Değişiklik yok, zaten büyük ekranda görünüyor) */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-6">
-              <Link href="/" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">Ana Sayfa</Link>
-              <Link href="/menu" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">Menü</Link>
-              {/* <Link href="/about" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">Hakkımızda</Link> */}
-              <Link href="/contact" className="text-white hover:text-brand-yellow px-3 py-2 rounded-md font-semibold transition-colors duration-300">İletişim</Link>
+          {/* --- DESKTOP NAVIGATION --- */}
+          <div className="hidden md:flex items-center gap-8">
+            <div className="flex items-center gap-1">
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className={`
+                      px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition-all relative group
+                      ${isScrolled ? 'text-neutral-500 hover:text-neutral-900' : 'text-white/80 hover:text-white'}
+                    `}
+                  >
+                    {link.name}
+                    {/* Active Indicator Line */}
+                    {isActive && (
+                        <div className={`absolute bottom-0 left-4 right-4 h-0.5 rounded-full ${isScrolled ? 'bg-neutral-900' : 'bg-white'}`} />
+                    )}
+                  </Link>
+                );
+              })}
             </div>
+            
+            {/* CTA Button: Admin Shortcut */}
+            <Link 
+              href="/admin" 
+              className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                isScrolled 
+                ? 'bg-neutral-900 text-white shadow-lg shadow-neutral-200' 
+                : 'bg-white text-neutral-900 shadow-2xl'
+              } hover:scale-105 active:scale-95`}
+            >
+              Management
+            </Link>
           </div>
 
-          {/* Mobil Menü Butonu (Hamburger İkonu) */}
-          <div className="-mr-2 flex md:hidden">
+          {/* --- MOBILE TOGGLE --- */}
+          <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-brand-yellow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-red focus:ring-white"
-              aria-controls="mobile-menu"
-              aria-expanded={isOpen}
+              className={`p-2 rounded-xl transition-colors ${isScrolled ? 'text-neutral-900 bg-neutral-100' : 'text-white bg-white/20'}`}
             >
-              <span className="sr-only">Ana menüyü aç</span>
-              {/* DEĞİŞİKLİK 4: İkon Boyutu */}
-              {/* Mobil için daha küçük bir ikon (h-6 w-6) */}
-              {isOpen ? (
-                <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
-              )}
+              {isOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobil Açılır Menü */}
+      {/* --- MOBILE MENU OVERLAY --- */}
       <Transition
         show={isOpen}
         as={Fragment}
-        enter="transition ease-out duration-200"
-        enterFrom="transform opacity-0 scale-95"
-        enterTo="transform opacity-100 scale-100"
-        leave="transition ease-in duration-150"
-        leaveFrom="transform opacity-100 scale-100"
-        leaveTo="transform opacity-0 scale-95"
+        enter="transition ease-out duration-300"
+        enterFrom="opacity-0 -translate-y-4"
+        enterTo="opacity-100 translate-y-0"
+        leave="transition ease-in duration-200"
+        leaveFrom="opacity-100 translate-y-0"
+        leaveTo="opacity-0 -translate-y-4"
       >
-        <div className="md:hidden" id="mobile-menu">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 text-center">
-              {/* DEĞİŞİKLİK 5: Mobil Menü Link Yazı Boyutları */}
-              {/* Daha dengeli bir görünüm için text-xl -> text-lg */}
-              <Link href="/" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>Ana Sayfa</Link>
-              <Link href="/menu" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>Menü</Link>
-              {/* <Link href="/about" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>Hakkımızda</Link> */}
-              <Link href="/contact" className="text-white hover:bg-red-700 hover:text-brand-yellow block px-3 py-3 rounded-md text-lg font-poppins" onClick={() => setIsOpen(false)}>İletişim</Link>
+        <div className="absolute top-full left-0 w-full bg-white border-b border-neutral-100 shadow-2xl md:hidden overflow-hidden rounded-b-[2rem]">
+            <div className="px-6 py-10 flex flex-col gap-6 text-center">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.name}
+                  href={link.href} 
+                  className="text-2xl font-serif font-bold text-neutral-900 hover:text-neutral-500 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <div className="h-[1px] w-12 bg-neutral-100 mx-auto my-2" />
+              <Link 
+                href="/admin" 
+                className="text-xs font-black uppercase tracking-[0.3em] text-neutral-400"
+                onClick={() => setIsOpen(false)}
+              >
+                Admin Access
+              </Link>
             </div>
         </div>
       </Transition>

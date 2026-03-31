@@ -3,31 +3,91 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* --- Servely Palette --- */
+  --neutral-50: 250, 250, 250;
+  --neutral-100: 245, 245, 245;
+  --neutral-900: 23, 23, 23;
+  --brand-red: 220, 38, 38;
 }
 
+/* Karanlık Mod Desteği (Opsiyonel - Şimdilik Soft Light önceliğimiz) */
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    /* İstersen burayı ileride karanlık tema için özelleştirebilirsin */
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply antialiased bg-[#FAFAFA] text-neutral-900 overflow-x-hidden;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02"; /* Font kalitesini artırır */
+  }
+
+  /* Başlıklar için varsayılan font hiyerarşisi */
+  h1, h2, h3, h4 {
+    @apply font-serif tracking-tight;
+  }
+}
+
+@layer components {
+  /* --- CUSTOM BUTTONS --- */
+  .btn-primary {
+    @apply bg-neutral-900 text-white px-8 py-4 rounded-2xl font-bold 
+           transition-all duration-300 hover:bg-neutral-800 
+           active:scale-95 shadow-xl shadow-neutral-200;
+  }
+
+  /* --- GLASSMORPHISM --- */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20;
+  }
+
+  /* --- CUSTOM SCROLLBAR (Senior Touch) --- */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-100;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 rounded-full hover:bg-neutral-400 transition-colors;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Yazıların resim üzerinde daha iyi okunması için soft gölge */
+  .text-shadow-sm {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  /* --- ANIMATIONS --- */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  .animate-shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+}
+
+/* --- SELECTION COLOR --- */
+::selection {
+  @apply bg-neutral-900 text-white;
 }

@@ -1,65 +1,52 @@
+// File path: src/app/layout.tsx
 import type { Metadata } from "next";
 import { Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import { getSiteContent } from "@/lib/data";
+import { getSiteContent } from "@/lib/data"; 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import LayoutWrapper from "@/components/LayoutWrapper";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  display: 'swap',
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins',
-});
+// Font ayarları (Aynı kalıyor)
+const poppins = Poppins({ subsets: ["latin"], variable: '--font-poppins', weight: ['400', '600'] });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: '--font-playfair', weight: ['400', '700'] });
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  display: 'swap',
-  style: ['normal', 'italic'],
-  weight: ['400', '700'],
-  variable: '--font-playfair',
-});
-
-export const metadata: Metadata = {
-  title: "Efsane Pide",
-  description: "Şehrin en lezzetli pideleri!",
-  icons: {
-    icon: '/efsane-logo.png', 
-  },
-};
-
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+/**
+ * SENIOR TOUCH: Dynamic Metadata
+ * Veritabanından dükkan ismini veya sloganı çekerek 
+ * tarayıcı sekmesini otomatik güncelliyoruz.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getSiteContent();
+  const siteName = "Servely";
   
-  const siteContentData = await getSiteContent();
-  const siteContentObject = (siteContentData && siteContentData.length > 0) ? siteContentData[0] : null;
+  return {
+    title: `${siteName} | Smart Restaurant Management`,
+    description: "Experience the art of modern dining management with Servely.",
+    icons: {
+      icon: '/icon.png',
+      shortcut: '/icon.png',
+    },
+  };
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Sayfa bazında içerik çekmeye gerek yok, çünkü Navbar ve Footer 
+  // Next.js Server Component olduğu için kendi verilerini bağımsız çekerler.
+  // Bu, Layout'un daha hızlı render edilmesini sağlar (Parallel Fetching).
 
   return (
-    <html lang="tr" suppressHydrationWarning>
-      <body className={`${poppins.variable} ${playfair.variable} font-sans flex flex-col min-h-screen bg-brand-background text-brand-dark`}>
-        <Navbar />
-        <main className="flex-grow">
+    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+      <body className={`${poppins.variable} ${playfair.variable} font-sans antialiased flex flex-col min-h-screen bg-neutral-50 text-neutral-900`}>
+        <LayoutWrapper
+          navbar={<Navbar />}
+          footer={<Footer />}
+        >
           {children}
-        </main>
-        <Footer />
-        {/* YENİ: Toast bildirimlerinin görüneceği yer */}
-        <ToastContainer
-          position="bottom-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
+        </LayoutWrapper>
+        <ToastContainer position="bottom-right" theme="dark" autoClose={3000} />
       </body>
     </html>
   );

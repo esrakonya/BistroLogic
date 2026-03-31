@@ -9,12 +9,13 @@ import {
   DocumentTextIcon,
   ArrowRightStartOnRectangleIcon,
   UserCircleIcon,
+  Squares2X2Icon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { TagIcon } from '@heroicons/react/16/solid';
 
 type NavLink = {
   name: string;
@@ -22,11 +23,12 @@ type NavLink = {
   icon: React.ElementType;
 };
 
+// 1. TAMAMEN İNGİLİZCE VE MODERN İSİMLENDİRMELER
 const navLinks: NavLink[] = [
-  { name: 'Ana Panel', href: '/admin', icon: HomeIcon },
-  { name: 'Ürün Yönetimi', href: '/admin/products', icon: RectangleStackIcon },
-  { name: 'Kategori Yönetimi', href: '/admin/categories', icon: TagIcon },
-  { name: 'İçerik Yönetimi', href: '/admin/content', icon: DocumentTextIcon },
+  { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+  { name: 'Products', href: '/admin/products', icon: RectangleStackIcon },
+  { name: 'Categories', href: '/admin/categories', icon: TagIcon },
+  { name: 'Site Content', href: '/admin/content', icon: DocumentTextIcon },
 ];
 
 export default function AdminLayout({
@@ -50,68 +52,80 @@ export default function AdminLayout({
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.refresh(); 
+    router.push('/login'); // Güvenli yönlendirme
   };
 
   return (
-    // DEĞİŞİKLİK: Arka plan rengi daha yumuşak bir gri (bg-gray-50) olarak güncellendi.
-    <div className="flex min-h-screen bg-gray-50 font-sans">
+    <div className="flex min-h-screen bg-neutral-50 font-sans antialiased text-neutral-900">
 
-      {/* --- YAN MENÜ (SIDEBAR) --- */}
-      {/* DEĞİŞİKLİK: Sidebar arka planı, ana temayla uyumlu 'brand-dark' yerine daha koyu bir 'gray-800' oldu.
-          Bu, panelin siteden farklı bir 'yönetim aracı' olduğunu hissettirir. */}
-      <aside className="w-64 flex-shrink-0 bg-gray-800 text-gray-300 flex flex-col shadow-lg">
-        {/* Logo Alanı */}
-        <div className="h-20 flex items-center justify-center border-b border-gray-700/50">
-          <Link href="/" className="text-white font-poppins font-bold text-xl tracking-wider hover:opacity-80 transition-opacity">
-            PİDE<span className="text-brand-yellow">EFSANESİ</span>
+      {/* --- SIDEBAR --- */}
+      <aside className="w-72 flex-shrink-0 bg-neutral-950 text-neutral-400 flex flex-col shadow-2xl">
+        
+        {/* SERVELY BRANDING */}
+        <div className="h-24 flex items-center px-8 border-b border-white/5">
+          <Link href="/" className="group flex items-center gap-3 transition-all">
+            <div className="bg-white p-1.5 rounded-lg group-hover:scale-110 transition-transform">
+                <Squares2X2Icon className="h-6 w-6 text-black stroke-2" />
+            </div>
+            <span className="text-white font-serif font-bold text-2xl tracking-tighter">
+              Servely
+            </span>
           </Link>
         </div>
         
-        {/* Menü Linkleri */}
-        <nav className="flex-grow px-4 py-6 space-y-2">
+        {/* NAVIGATION LINKS */}
+        <nav className="flex-grow px-4 py-8 space-y-1.5">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex items-center px-4 py-3 rounded-lg transition-colors duration-200 ${
+                className={`flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group ${
                   isActive
-                    ? 'bg-brand-red text-white shadow-inner' // Aktif link stili daha belirgin
-                    : 'hover:bg-gray-700 hover:text-white'
+                    ? 'bg-white/10 text-white shadow-sm' 
+                    : 'hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <link.icon className="h-6 w-6 mr-4" />
-                <span className="font-semibold">{link.name}</span>
+                <link.icon className={`h-5 w-5 mr-4 transition-colors ${isActive ? 'text-white' : 'text-neutral-500 group-hover:text-white'}`} />
+                <span className="font-medium tracking-tight text-sm uppercase">{link.name}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Kullanıcı Alanı */}
-        <div className="border-t border-gray-700/50 p-4">
-          <div className="flex items-center">
-            <UserCircleIcon className="h-10 w-10 text-gray-500"/>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-white truncate" title={user?.email || ''}>
-                {user ? user.email : 'Yükleniyor...'}
+        {/* USER PROFILE & LOGOUT SECTION */}
+        <div className="mt-auto p-6 border-t border-white/5 bg-black/20">
+          <div className="flex items-center gap-4">
+            <div className="bg-neutral-800 p-2 rounded-full ring-2 ring-white/5">
+                <UserCircleIcon className="h-6 w-6 text-neutral-400"/>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-xs font-bold text-white truncate uppercase tracking-widest">
+                Admin Account
               </p>
-              <button 
-                onClick={handleLogout} 
-                className="group flex items-center text-xs text-gray-400 hover:text-brand-red transition-colors"
-              >
-                <ArrowRightStartOnRectangleIcon className="h-4 w-4 mr-1.5 transition-transform group-hover:translate-x-1" />
-                Çıkış Yap
-              </button>
+              <p className="text-[11px] text-neutral-500 truncate" title={user?.email || ''}>
+                {user ? user.email : 'Loading identity...'}
+              </p>
             </div>
           </div>
+          
+          <button 
+            onClick={handleLogout} 
+            className="w-full mt-6 flex items-center justify-center gap-2 bg-neutral-800 hover:bg-red-900/40 hover:text-red-400 text-neutral-300 text-xs font-bold py-3 rounded-xl transition-all duration-300 border border-white/5"
+          >
+            <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
+            SIGN OUT
+          </button>
         </div>
       </aside>
 
-      {/* --- ANA İÇERİK ALANI --- */}
-      {/* DEĞİŞİKLİK: İçerik alanı, bir 'container' içine alınarak daha düzenli hale getirildi. */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto py-10 px-6 md:px-10">
+      {/* --- MAIN CONTENT AREA --- */}
+      <main className="flex-1 overflow-y-auto relative">
+        {/* Arka planda şık bir gradyan geçişi */}
+        <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-neutral-200/50 to-transparent pointer-events-none -z-10"></div>
+        
+        <div className="max-w-[1400px] mx-auto py-12 px-8 md:px-16">
           {children}
         </div>
       </main>

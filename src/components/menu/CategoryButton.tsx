@@ -3,33 +3,51 @@
 
 import { motion } from 'framer-motion';
 
-// Bu bileşenin kabul edeceği prop'ların tarifi
 interface CategoryButtonProps {
-  label: string; // Butonun içinde ne yazacak? "Tümü", "Pide", vb.
-  isSelected: boolean; // Bu buton şu anda seçili mi?
-  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void; // Tıklanınca ne olacak?
+  label: string;
+  isSelected: boolean;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
+/**
+ * CategoryButton Component
+ * 
+ * Featuring a shared layout animation using framer-motion for 
+ * seamless transitions between active states.
+ */
 export default function CategoryButton({ label, isSelected, onClick }: CategoryButtonProps) {
   return (
     <button
       onClick={onClick}
-      // Stil kodları artık burada merkezi olarak yönetiliyor.
-      className={`relative px-4 py-2 text-sm font-semibold rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-brand-red focus:ring-offset-2 focus:ring-offset-brand-background
-        ${!isSelected ? 'bg-white/60 hover:bg-white/90' : ''}
+      // ARIA label: Erişilebilirlik (Accessibility) için önemli bir Senior detayı
+      aria-pressed={isSelected}
+      className={`
+        relative px-6 py-2.5 text-xs font-bold uppercase tracking-[0.15em] 
+        rounded-full transition-all duration-500 focus:outline-none 
+        ${!isSelected 
+          ? 'text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100' 
+          : 'text-white'}
       `}
     >
-      {/* Animasyonlu kırmızı arka plan */}
+      {/* 
+        SHARED LAYOUT ANIMATION: 
+        Bu katman, seçili kategori değiştikçe butonlar arasında 
+        "akıyormuş" gibi bir geçiş efekti yaratır. 
+      */}
       {isSelected && (
         <motion.div
           layoutId="active-category-pill"
-          className="absolute inset-0 bg-brand-red rounded-full"
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          className="absolute inset-0 bg-neutral-900 rounded-full shadow-lg shadow-neutral-200"
+          transition={{ 
+            type: 'spring', 
+            stiffness: 350, 
+            damping: 30 
+          }}
         />
       )}
       
-      {/* Buton yazısı */}
-      <span className={`relative z-10 transition-colors duration-200 ${isSelected ? 'text-white' : 'text-brand-dark'}`}>
+      {/* BUTTON LABEL */}
+      <span className="relative z-10 transition-colors duration-300">
         {label}
       </span>
     </button>

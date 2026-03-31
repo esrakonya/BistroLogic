@@ -1,18 +1,17 @@
 // Dosya Yolu: /src/app/api/menu/route.ts
-
-// DEĞİŞİKLİK: 'createClient' yerine, Next.js için özel olarak tasarlanmış
-// 'createRouteHandlerClient' ve 'cookies' import edildi.
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Public API to fetch the complete menu structure.
+ * Performs a deep join: Categories -> Products -> Ingredients
+ */
 export async function GET() {
-  // DEĞİŞİKLİK: Artık Supabase istemcisini bu güvenli yöntemle oluşturuyoruz.
-  // Bu, .env'deki anonim anahtarı otomatik olarak kullanır ve RLS kurallarına uyar.
-  // Artık manuel olarak URL ve KEY kontrolü yapmamıza gerek yok.
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any });
 
   try {
     const { data, error } = await supabase
@@ -32,35 +31,38 @@ export async function GET() {
           )
         )
       `)
-      // 'display_order' sütununuz varsa bu satırı aktif bırakın, yoksa silebilirsiniz.
-      // Eğer hata veriyorsa, .order('id', { ascending: true }) olarak değiştirin.
       .order('display_order', { ascending: true });
 
     if (error) {
-      console.error("Supabase API Hatası (/api/menu):", error);
-      // Hata mesajını daha anlaşılır hale getirdik.
-      throw new Error(error.message);
+      console.error("[Menu API Error]:", error);
+      return NextResponse.json({ error: 'Failed to synchronize with the database.' }, { status: 500 });
     }
 
-    // Veri temizleme işlemi aynı kalıyor, bu kısım zaten doğruydu.
+    /**
+     * DATA OPTIMIZATION: 
+     * We transform the deeply nested Supabase join response into a 
+     * clean, developer-friendly JSON structure for the frontend.
+     */
     const cleanedData = data.map(category => ({
       id: category.id,
       name: category.name,
-      products: category.products.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        is_available: product.is_available,
-        image_url: product.image_url,
-        ingredients: product.product_ingredients.map((pi: any) => pi.ingredients.name)
-      }))
+      products: (category.products || [])
+        .filter((p: any) => p.is_available) // Only show available products to customers
+        .map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          image_url: product.image_url,
+          // Flattening ingredients array: [{ingredients: {name: 'Meat'}}] -> ['Meat']
+          ingredients: product.product_ingredients?.map((pi: any) => pi.ingredients?.name).filter(Boolean) || []
+        }))
     }));
 
     return NextResponse.json(cleanedData);
 
   } catch (err: any) {
-    console.error("API rotasında (/api/menu) genel bir hata oluştu:", err);
-    return NextResponse.json({ error: 'Menü verisi alınırken bir hata oluştu.' }, { status: 500 });
+    console.error("[Fatal Menu API Error]:", err);
+    return NextResponse.json({ error: 'An unexpected error occurred while fetching the menu.' }, { status: 500 });
   }
 }

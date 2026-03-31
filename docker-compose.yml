@@ -1,13 +1,24 @@
-version: '3.8'
-
 services:
-  web:
-    build: .
+  servely-platform:
+    container_name: servely_app
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    # Konteyner bir hata nedeniyle kapanırsa otomatik olarak yeniden başlar.
+    restart: always
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
     env_file:
       - .env.local
+    # Uygulamanın sunucuyu sömürmesini engeller.
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+# Eğer ileride bir veritabanı konteyneri eklersen buraya eklenecek.

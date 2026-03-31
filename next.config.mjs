@@ -4,7 +4,7 @@ const nextConfig = {
         remotePatterns: [
           {
             protocol: 'https',
-            hostname: 'pgbbpxljeaguupofaffo.supabase.co', // Kendi Supabase projenizin hostname'i
+            hostname: 'aihhyohcvupoohjtjugn.supabase.co',
             port: '',
             pathname: '/storage/v1/object/public/product-images/**',
           },

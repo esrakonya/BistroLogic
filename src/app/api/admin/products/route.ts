@@ -7,18 +7,35 @@ import { revalidatePath } from 'next/cache';
 export const dynamic = 'force-dynamic';
 
 /**
- * [Admin] Tüm ürünleri, kategori adlarıyla birlikte listeler (GET).
+ * [Admin] Lists all products with their associated category names (GET).
  */
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any });
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized access.' }, { status: 401 });
+    }
 
-    const { data, error } = await supabase.from('products').select('*, categories(name)').order('id');
+    // Joining products with categories to fetch specific metadata
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, categories(name)')
+      .order('id', { ascending: false }); // Newest products first for admin convenience
+
     if (error) throw error;
 
-    const formattedData = data.map(p => ({ ...p, categoryName: p.categories?.name || null, categories: undefined }));
+    /**
+     * Data Flattening: Transforming the nested Supabase response 
+     * into a clean, flat object for easier frontend consumption.
+     */
+    const formattedData = data.map(p => ({ 
+      ...p, 
+      categoryName: p.categories?.name || 'Uncategorized', 
+      categories: undefined 
+    }));
+
     return NextResponse.json(formattedData);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -26,21 +43,36 @@ export async function GET() {
 }
 
 /**
- * [Admin] Yeni bir ürün ekler (POST).
+ * [Admin] Creates a new product in the inventory (POST).
  */
 export async function POST(request: Request) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const cookieStore = await cookies();
+  const supabase = createRouteHandlerClient({ cookies: () => cookieStore as any });
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized access.' }, { status: 401 });
+    }
 
     const productData = await request.json();
-    const { data, error } = await supabase.from('products').insert([productData]).select();
+
+    // Basic server-side validation
+    if (!productData || !productData.name) {
+      return NextResponse.json({ error: 'Product details are missing.' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('products')
+      .insert([productData])
+      .select();
+
     if (error) throw error;
     
+    // Invalidate paths to keep data consistent across the platform
     revalidatePath('/admin/products');
     revalidatePath('/menu');
-    return NextResponse.json(data);
+
+    return NextResponse.json(data, { status: 201 }); // 201 Created
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
