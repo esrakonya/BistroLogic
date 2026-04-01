@@ -10,7 +10,7 @@
 > ### Collaboration & Credits / Emeği Geçenler
 > This platform was co-developed as a **joint project** by [Büşra Konya](https://github.com/busraknya) and **Esra Konya**. Together, we engineered the core architecture and SaaS vision from the ground up.
 > 
-> *Bu platform, [Büşra Konya] ve **Esra Konya** tarafından **ortak bir proje** olarak geliştirilmiştir. Çekirdek mimari ve SaaS vizyonu ekip çalışmasıyla uçtan uca kurgulanmıştır.*
+> *Bu platform, **Büşra Konya** ve **Esra Konya** tarafından **ortak bir proje** olarak geliştirilmiştir. Çekirdek mimari ve SaaS vizyonu ekip çalışmasıyla uçtan uca kurgulanmıştır.*
 
 ---
 
